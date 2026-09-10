@@ -1,0 +1,12 @@
+name = "painel-manutencao-ambar"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "painel-planos-analises"
+database_id = "20ebcb96-e0d8-4a7a-9a17-b8640fe276ed"
