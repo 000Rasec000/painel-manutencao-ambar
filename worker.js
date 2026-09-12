@@ -8,6 +8,10 @@
 
 const TABLES = { analyses: 'analyses', actions: 'actions' };
 
+/* Único e-mail autorizado a enviar/excluir Documentos Corporativos.
+   Qualquer outro usuário autenticado só pode listar/baixar. */
+const DOCS_ADMIN_EMAIL = 'cesar.silva@ambarenergia.com.br';
+
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -80,7 +84,11 @@ async function handleApi(request, env, url) {
    ------------------------------------------------------------ */
 async function handleDocsApi(request, env, url, id, sub) {
   const email = userEmail(request);
+  const isAdmin = email.toLowerCase() === DOCS_ADMIN_EMAIL.toLowerCase();
   try {
+    if ((request.method === 'POST' || request.method === 'DELETE') && !isAdmin) {
+      return json({ error: 'Somente o administrador pode enviar ou excluir documentos.' }, 403);
+    }
     if (request.method === 'GET' && !id) {
       const { results } = await env.DB.prepare(
         `SELECT id, name, category, size, content_type, created_by, created_at FROM docs ORDER BY created_at DESC`
@@ -136,6 +144,10 @@ async function handleDocsApi(request, env, url, id, sub) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname === '/api/me') {
+      const email = userEmail(request);
+      return json({ email, isDocsAdmin: email.toLowerCase() === DOCS_ADMIN_EMAIL.toLowerCase() });
+    }
     if (url.pathname.startsWith('/api/docs')) {
       const parts = url.pathname.split('/').filter(Boolean); // ['api','docs', maybe id, maybe 'download']
       return handleDocsApi(request, env, url, parts[2], parts[3]);
