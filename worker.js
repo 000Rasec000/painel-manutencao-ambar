@@ -86,8 +86,8 @@ async function handleDocsApi(request, env, url, id, sub) {
   const email = userEmail(request);
   const isAdmin = email.toLowerCase() === DOCS_ADMIN_EMAIL.toLowerCase();
   try {
-    if ((request.method === 'POST' || request.method === 'DELETE') && !isAdmin) {
-      return json({ error: 'Somente o administrador pode enviar ou excluir documentos.' }, 403);
+    if ((request.method === 'POST' || request.method === 'DELETE' || request.method === 'PUT') && !isAdmin) {
+      return json({ error: 'Somente o administrador pode enviar, editar ou excluir documentos.' }, 403);
     }
     if (request.method === 'GET' && !id) {
       const { results } = await env.DB.prepare(
@@ -124,6 +124,15 @@ async function handleDocsApi(request, env, url, id, sub) {
         `INSERT INTO docs (id, name, category, size, content_type, r2_key, created_by, created_at) VALUES (?,?,?,?,?,?,?,?)`
       ).bind(docId, file.name, category, file.size, file.type || '', r2Key, email, now).run();
       return json({ id: docId, name: file.name, category, size: file.size, content_type: file.type || '', created_by: email, created_at: now });
+    }
+
+    if (request.method === 'PUT' && id) {
+      const body = await request.json();
+      const meta = await env.DB.prepare(`SELECT id FROM docs WHERE id = ?`).bind(id).first();
+      if (!meta) return json({ error: 'Documento não encontrado.' }, 404);
+      await env.DB.prepare(`UPDATE docs SET name = ?, category = ? WHERE id = ?`)
+        .bind(body.name, body.category || '', id).run();
+      return json({ ok: true, id, name: body.name, category: body.category || '' });
     }
 
     if (request.method === 'DELETE' && id) {
