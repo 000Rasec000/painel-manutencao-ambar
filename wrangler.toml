@@ -10,3 +10,7 @@ binding = "ASSETS"
 binding = "DB"
 database_name = "painel-planos-analises"
 database_id = "20ebcb96-e0d8-4a7a-9a17-b8640fe276ed"
+
+[[r2_buckets]]
+binding = "DOCS_BUCKET"
+bucket_name = "painel-manutencao-ambar-docs"

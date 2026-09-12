@@ -73,9 +73,73 @@ async function handleApi(request, env, url) {
   }
 }
 
+/* ------------------------------------------------------------
+   Documentos Corporativos: metadados no D1 (tabela "docs"),
+   conteúdo binário no R2 (bucket DOCS_BUCKET). Evita embutir
+   arquivos em base64 dentro do HTML estático do painel.
+   ------------------------------------------------------------ */
+async function handleDocsApi(request, env, url, id, sub) {
+  const email = userEmail(request);
+  try {
+    if (request.method === 'GET' && !id) {
+      const { results } = await env.DB.prepare(
+        `SELECT id, name, category, size, content_type, created_by, created_at FROM docs ORDER BY created_at DESC`
+      ).all();
+      return json({ items: results });
+    }
+
+    if (request.method === 'GET' && id && sub === 'download') {
+      const meta = await env.DB.prepare(`SELECT * FROM docs WHERE id = ?`).bind(id).first();
+      if (!meta) return json({ error: 'Documento não encontrado.' }, 404);
+      const obj = await env.DOCS_BUCKET.get(meta.r2_key);
+      if (!obj) return json({ error: 'Arquivo não encontrado no armazenamento.' }, 404);
+      const safeName = String(meta.name || 'documento').replace(/"/g, '');
+      return new Response(obj.body, {
+        headers: {
+          'content-type': meta.content_type || 'application/octet-stream',
+          'content-disposition': `attachment; filename="${safeName}"`,
+        },
+      });
+    }
+
+    if (request.method === 'POST' && !id) {
+      const form = await request.formData();
+      const file = form.get('file');
+      const docId = form.get('id');
+      const category = form.get('category') || '';
+      if (!file || !docId) return json({ error: 'Dados incompletos.' }, 400);
+      const r2Key = 'docs/' + docId;
+      const buf = await file.arrayBuffer();
+      await env.DOCS_BUCKET.put(r2Key, buf, { httpMetadata: { contentType: file.type || 'application/octet-stream' } });
+      const now = new Date().toISOString();
+      await env.DB.prepare(
+        `INSERT INTO docs (id, name, category, size, content_type, r2_key, created_by, created_at) VALUES (?,?,?,?,?,?,?,?)`
+      ).bind(docId, file.name, category, file.size, file.type || '', r2Key, email, now).run();
+      return json({ id: docId, name: file.name, category, size: file.size, content_type: file.type || '', created_by: email, created_at: now });
+    }
+
+    if (request.method === 'DELETE' && id) {
+      const meta = await env.DB.prepare(`SELECT r2_key FROM docs WHERE id = ?`).bind(id).first();
+      if (meta) {
+        await env.DOCS_BUCKET.delete(meta.r2_key);
+        await env.DB.prepare(`DELETE FROM docs WHERE id = ?`).bind(id).run();
+      }
+      return json({ ok: true });
+    }
+
+    return json({ error: 'Método não suportado.' }, 405);
+  } catch (err) {
+    return json({ error: String(err && err.message || err) }, 500);
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname.startsWith('/api/docs')) {
+      const parts = url.pathname.split('/').filter(Boolean); // ['api','docs', maybe id, maybe 'download']
+      return handleDocsApi(request, env, url, parts[2], parts[3]);
+    }
     if (url.pathname.startsWith('/api/')) {
       return handleApi(request, env, url);
     }
