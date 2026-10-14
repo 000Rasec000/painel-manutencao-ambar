@@ -6894,7 +6894,7 @@ function kpis(T,co,coP,coE,pl,IMP,TP,den){
   /* aderência: variações de até 7 dias (para mais ou para menos) são tratadas como "no prazo";
      só entram no desvio variações de 8 dias ou mais */
   const aderDen=T.prazo7+T.atraso8_30+T.atraso31_60+T.atraso61+T.antec8;
-  const ader=aderDen>0 ? T.prazo7/aderDen : null;
+  const ader=aderDen>0 ? (T.prazo7+T.antec8)/aderDen : null;
   const atrasoTotal=T.atraso8_30+T.atraso31_60+T.atraso61;
   const h=histo(r=>CORR.includes(r[2])), mttr=pctil(h,.5);
   /* mediana vem do histograma, que só contém finalizadas — a média precisa do mesmo recorte */
@@ -7273,7 +7273,7 @@ function metricaUsinaMes(mkey,u,mi){
   if(mkey==='plan') return den?pl.n/den*100:null;
   if(mkey==='cp') return den?cp.n/den*100:null;
   if(mkey==='ce') return den?ce.n/den*100:null;
-  if(mkey==='ader') return prazo?T.prazo/prazo*100:null;
+  if(mkey==='ader') return prazo?(T.prazo+T.antec)/prazo*100:null;
   if(mkey==='react') return T.n?np.reativa/T.n*100:null;
   return null;
 }
@@ -7288,7 +7288,7 @@ function metricaUsinaAcc(mkey,u){
   if(mkey==='plan') return den?pl.n/den*100:null;
   if(mkey==='cp') return den?cp.n/den*100:null;
   if(mkey==='ce') return den?ce.n/den*100:null;
-  if(mkey==='ader') return prazo?T.prazo/prazo*100:null;
+  if(mkey==='ader') return prazo?(T.prazo+T.antec)/prazo*100:null;
   if(mkey==='react') return T.n?np.reativa/T.n*100:null;
   return null;
 }
@@ -7306,7 +7306,7 @@ function directorMetrics(){
     const pendH=pend.reduce((a,p)=>a+p[5],0);
     const hm=histoMes(mi,r=>CORR.includes(r[2])); const mb=mtbfM.get(mi);
     meses.push({mi,plan:den?pl.n/den*100:null,cp:den?cp.n/den*100:null,ce:den?ce.n/den*100:null,
-      ader:prazo?T.prazo/prazo*100:null,backlog:pendH,react:T.n?np.reativa/T.n*100:null,
+      ader:prazo?(T.prazo+T.antec)/prazo*100:null,backlog:pendH,react:T.n?np.reativa/T.n*100:null,
       mttr:pctil(hm,.5),mtbf:mb&&mb.n?mb.sum/mb.n:null});
   }
   const T=agg(),pl=agg(r=>PLAN.includes(r[2])),cp=agg(r=>r[2]===CORR_P),ce=agg(r=>r[2]===CORR_E),np=agg(r=>r[3]!==0&&r[2]!==1);
@@ -7316,7 +7316,7 @@ function directorMetrics(){
     {id:'Plan',key:'plan',unit:'pct',target:80,dir:'high',acc:den?pl.n/den*100:null},
     {id:'CorrPlan',key:'cp',unit:'pct',target:10,dir:'low',acc:den?cp.n/den*100:null},
     {id:'Emerg',key:'ce',unit:'pct',target:10,dir:'low',acc:den?ce.n/den*100:null},
-    {id:'Ader',key:'ader',unit:'pct',target:80,dir:'high',acc:prazo?T.prazo/prazo*100:null},
+    {id:'Ader',key:'ader',unit:'pct',target:80,dir:'high',acc:prazo?(T.prazo+T.antec)/prazo*100:null},
     {id:'Backlog',key:'backlog',unit:'h',target:null,dir:null,acc:pendFiltrado().reduce((a,p)=>a+p[5],0)},
     {id:'Reactive',key:'react',unit:'pct',target:12,dir:'low',acc:T.n?np.reativa/T.n*100:null},
     {id:'MTTR',key:'mttr',unit:'h',target:null,dir:null,acc:pctil(hm,.5)},
@@ -7378,7 +7378,7 @@ function healthFor(from,to,units){
   }
   const den=pl.n+corr.n, prazo=T.prazo+T.atraso+T.antec;
   const failRate=den?falhasPond/den*100:null;
-  const ader=prazo?T.prazo/prazo*100:null;
+  const ader=prazo?(T.prazo+T.antec)/prazo*100:null;
   const react=T.n?np.reativa/T.n*100:null;
   const pend=DATA.pend.filter(p=>p[6]>=from&&p[6]<=to&&us.has(p[0])&&(incluiCrit(p[2]))&&(incluiDisc(p[9])));
   const backlogH=pend.reduce((a,p)=>a+p[5],0);
@@ -7487,7 +7487,7 @@ function narrativa(T,co,coP,coE,pl,IMP,TP,den){
   const critA=agg(r=>r[4]===0), critAcorr=agg(r=>r[4]===0&&CORR.includes(r[2]));
   const pend=pendFiltrado();
   const velhas=pend.filter(p=>p[4]>90).length;
-  const ader=(T.prazo+T.atraso+T.antec)>0 ? T.prazo/(T.prazo+T.atraso+T.antec) : null;
+  const ader=(T.prazo+T.atraso+T.antec)>0 ? (T.prazo+T.antec)/(T.prazo+T.atraso+T.antec) : null;
 
   el.innerHTML=`
     <p>No período <b>${faixa()}</b>, ${state.us===null?'a frota':umaUsina()?'a usina <b>'+uLabel()+'</b>':'o grupo <b>'+uLabel()+'</b>'} executou
@@ -7870,7 +7870,7 @@ function ranking(){
     const pend=DATA.pend.filter(p=>p[0]===u&&p[6]>=state.from&&p[6]<=state.to&&(incluiCrit(p[2]))&&(incluiDisc(p[9])));
     return {u, n:T.n, imp:(pl.n+co.n)>0?pl.n/(pl.n+co.n):null, corr:T.n?co.n/T.n:null,
       emerg:co.n?coE.n/co.n:null, mttr:co.durN?co.durSum/co.durN:null, esp:co.n?co.hEsp/co.n:null,
-      ader:(T.prazo+T.atraso+T.antec)>0?T.prazo/(T.prazo+T.atraso+T.antec):null,
+      ader:(T.prazo+T.atraso+T.antec)>0?(T.prazo+T.antec)/(T.prazo+T.atraso+T.antec):null,
       pend:pend.length, velhas:pend.filter(p=>p[4]>90).length};
   }).filter(x=>x.n>0).sort((a,b)=>(a.imp??1)-(b.imp??1));
   const maxN=Math.max(...linhas.map(x=>x.n),1);
