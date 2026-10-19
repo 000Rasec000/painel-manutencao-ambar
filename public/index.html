@@ -6891,11 +6891,12 @@ function fitSingleLine(el){
 function kpis(T,co,coP,coE,pl,IMP,TP,den){
   const box=document.getElementById('kpis');
   if(!T.n){ box.innerHTML='<div class="card" style="grid-column:1/-1">Nenhuma OS no filtro — amplie o período ou troque a usina.</div>'; return; }
+  const TFin=agg(r=>r[5]===0); // total de OS finalizadas (sem restrição de classe/origem) — usado como universo da Execução Reativa e da Aderência (desconsiderar OS pendentes, só finalizadas)
   /* aderência: variações de até 7 dias (para mais ou para menos) são tratadas como "no prazo";
      só entram no desvio variações de 8 dias ou mais */
-  const aderDen=T.prazo7+T.atraso8_30+T.atraso31_60+T.atraso61+T.antec8;
-  const ader=aderDen>0 ? (T.prazo7+T.antec8)/aderDen : null;
-  const atrasoTotal=T.atraso8_30+T.atraso31_60+T.atraso61;
+  const aderDen=TFin.prazo7+TFin.atraso8_30+TFin.atraso31_60+TFin.atraso61+TFin.antec8; // restrito a OS finalizadas: aderência mede o desvio de prazo do que já foi concluído
+  const ader=aderDen>0 ? (TFin.prazo7+TFin.antec8)/aderDen : null;
+  const atrasoTotal=TFin.atraso8_30+TFin.atraso31_60+TFin.atraso61;
   const h=histo(r=>CORR.includes(r[2])), mttr=pctil(h,.5);
   /* mediana vem do histograma, que só contém finalizadas — a média precisa do mesmo recorte */
   const coFin=agg(r=>CORR.includes(r[2]) && r[5]===0);
@@ -6925,7 +6926,6 @@ function kpis(T,co,coP,coE,pl,IMP,TP,den){
   const mu=mtbfPorUsina(); let mtbfSum=0,mtbfN=0,mtbfAtivos=0;
   for(const o of mu.values()){mtbfSum+=o.sum;mtbfN+=o.n;mtbfAtivos+=o.ativos;}
   const mtbf=mtbfN?mtbfSum/mtbfN:null;
-  const TFin=agg(r=>r[5]===0); // total de OS finalizadas (sem restrição de classe/origem) — usado como universo da Execução Reativa a pedido do usuário (desconsiderar OS pendentes, só finalizadas)
   const Tnp=agg(r=>r[3]!==0&&r[2]!==1&&r[5]===0); // execução reativa desconsiderando OS com plano de manutenção (origem 'Plano de Manutenção'), Preventiva (classe) e OS não finalizadas (pendentes/canceladas): preventiva é manutenção programada por definição e não pode ser reativa; só OS finalizadas entram no cálculo
   /* execução reativa por classe (sem OS com plano, sem Preventiva), para separar corretiva do segundo maior tipo */
   const reativaPorClasse={};
@@ -6972,14 +6972,14 @@ function kpis(T,co,coP,coE,pl,IMP,TP,den){
       ] },
     { c: ader>=0.85?'ok':ader>=0.7?'warn':'bad', lbl:'Aderência à programação', val:pct(ader),
       foot:`${int(atrasoTotal)} OS reprogramadas para depois (variação de 8 dias ou mais)`,
-      extra:[`${int(T.atraso8_30)} OS com atraso de 8 a 30 dias`,
-             `${int(T.atraso31_60)} OS com atraso de 31 a 60 dias`,
-             `${int(T.atraso61)} OS com atraso de 61 dias ou mais`],
+      extra:[`${int(TFin.atraso8_30)} OS com atraso de 8 a 30 dias`,
+             `${int(TFin.atraso31_60)} OS com atraso de 31 a 60 dias`,
+             `${int(TFin.atraso61)} OS com atraso de 61 dias ou mais`],
       extraCls:['foot-extra','foot-extra-dark','foot-extra-red'],
       drill:[
-        ()=>({titulo:'Aderência · atraso de 8 a 30 dias', lista:osdList(d=>d[18]!=null&&d[18]>7&&d[18]<=30)}),
-        ()=>({titulo:'Aderência · atraso de 31 a 60 dias', lista:osdList(d=>d[18]!=null&&d[18]>30&&d[18]<=60)}),
-        ()=>({titulo:'Aderência · atraso de 61 dias ou mais', lista:osdList(d=>d[18]!=null&&d[18]>60)})
+        ()=>({titulo:'Aderência · atraso de 8 a 30 dias', lista:osdList(d=>d[5]===0&&d[18]!=null&&d[18]>7&&d[18]<=30)}),
+        ()=>({titulo:'Aderência · atraso de 31 a 60 dias', lista:osdList(d=>d[5]===0&&d[18]!=null&&d[18]>30&&d[18]<=60)}),
+        ()=>({titulo:'Aderência · atraso de 61 dias ou mais', lista:osdList(d=>d[5]===0&&d[18]!=null&&d[18]>60)})
       ] },
     { c: pend.length>300?'bad':pend.length>120?'warn':'ok', lbl:'Backlog pendente', val:hrs(hhPend),
       foot:`${int(pend.length)} OS pendentes${soBacklog()?'':' · divididos em:'}`,
@@ -7270,11 +7270,11 @@ function metricaUsinaMes(mkey,u,mi){
   if(mkey==='mtbf') return mtbfPorUsinaMes(u,mi);
   const T=aggUsinaMes(u,mi), pl=aggUsinaMes(u,mi,r=>PLAN.includes(r[2])), cp=aggUsinaMes(u,mi,r=>r[2]===CORR_P),
         ce=aggUsinaMes(u,mi,r=>r[2]===CORR_E), np=aggUsinaMes(u,mi,r=>r[3]!==0&&r[2]!==1&&r[5]===0), TFin=aggUsinaMes(u,mi,r=>r[5]===0);
-  const den=pl.n+cp.n+ce.n, prazo=T.prazo+T.atraso+T.antec;
+  const den=pl.n+cp.n+ce.n, prazo=T.prazo+T.atraso+T.antec, prazoFin=TFin.prazo+TFin.atraso+TFin.antec;
   if(mkey==='plan') return den?pl.n/den*100:null;
   if(mkey==='cp') return den?cp.n/den*100:null;
   if(mkey==='ce') return den?ce.n/den*100:null;
-  if(mkey==='ader') return prazo?(T.prazo+T.antec)/prazo*100:null;
+  if(mkey==='ader') return prazoFin?(TFin.prazo+TFin.antec)/prazoFin*100:null;
   if(mkey==='react') return TFin.n?np.reativa/TFin.n*100:null;
   return null;
 }
@@ -7285,11 +7285,11 @@ function metricaUsinaAcc(mkey,u){
   if(mkey==='mtbf'){ const mu=mtbfPorUsina(); const o=mu.get(u); return o&&o.n?o.sum/o.n:null; }
   const T=aggUsinaAcc(u), pl=aggUsinaAcc(u,r=>PLAN.includes(r[2])), cp=aggUsinaAcc(u,r=>r[2]===CORR_P),
         ce=aggUsinaAcc(u,r=>r[2]===CORR_E), np=aggUsinaAcc(u,r=>r[3]!==0&&r[2]!==1&&r[5]===0), TFin=aggUsinaAcc(u,r=>r[5]===0);
-  const den=pl.n+cp.n+ce.n, prazo=T.prazo+T.atraso+T.antec;
+  const den=pl.n+cp.n+ce.n, prazo=T.prazo+T.atraso+T.antec, prazoFin=TFin.prazo+TFin.atraso+TFin.antec;
   if(mkey==='plan') return den?pl.n/den*100:null;
   if(mkey==='cp') return den?cp.n/den*100:null;
   if(mkey==='ce') return den?ce.n/den*100:null;
-  if(mkey==='ader') return prazo?(T.prazo+T.antec)/prazo*100:null;
+  if(mkey==='ader') return prazoFin?(TFin.prazo+TFin.antec)/prazoFin*100:null;
   if(mkey==='react') return TFin.n?np.reativa/TFin.n*100:null;
   return null;
 }
@@ -7302,22 +7302,22 @@ function directorMetrics(){
       if(r[0]!==mi||!incluiUsina(r[1])||(!incluiCrit(r[4]))||(!incluiDisc(r[25]))||(!incluiSit(r[5]))) continue;
       acc(T,r);if(PLAN.includes(r[2]))acc(pl,r);if(r[2]===CORR_P)acc(cp,r);if(r[2]===CORR_E)acc(ce,r);if(r[3]!==0&&r[2]!==1&&r[5]===0)acc(np,r);if(r[5]===0)acc(TFinM,r);
     }
-    const den=pl.n+cp.n+ce.n, prazo=T.prazo+T.atraso+T.antec;
+    const den=pl.n+cp.n+ce.n, prazo=T.prazo+T.atraso+T.antec, prazoFin=TFinM.prazo+TFinM.atraso+TFinM.antec;
     const pend=DATA.pend.filter(p=>p[6]===mi&&incluiUsina(p[0])&&(incluiCrit(p[2]))&&(incluiDisc(p[9])));
     const pendH=pend.reduce((a,p)=>a+p[5],0);
     const hm=histoMes(mi,r=>CORR.includes(r[2])); const mb=mtbfM.get(mi);
     meses.push({mi,plan:den?pl.n/den*100:null,cp:den?cp.n/den*100:null,ce:den?ce.n/den*100:null,
-      ader:prazo?(T.prazo+T.antec)/prazo*100:null,backlog:pendH,react:TFinM.n?np.reativa/TFinM.n*100:null,
+      ader:prazoFin?(TFinM.prazo+TFinM.antec)/prazoFin*100:null,backlog:pendH,react:TFinM.n?np.reativa/TFinM.n*100:null,
       mttr:pctil(hm,.5),mtbf:mb&&mb.n?mb.sum/mb.n:null});
   }
   const T=agg(),pl=agg(r=>PLAN.includes(r[2])),cp=agg(r=>r[2]===CORR_P),ce=agg(r=>r[2]===CORR_E),np=agg(r=>r[3]!==0&&r[2]!==1&&r[5]===0),TFin=agg(r=>r[5]===0);
-  const den=pl.n+cp.n+ce.n,prazo=T.prazo+T.atraso+T.antec,hm=histo(r=>CORR.includes(r[2]));
+  const den=pl.n+cp.n+ce.n,prazo=T.prazo+T.atraso+T.antec,prazoFin=TFin.prazo+TFin.atraso+TFin.antec,hm=histo(r=>CORR.includes(r[2]));
   const mu=mtbfPorUsina();let mSum=0,mN=0;for(const o of mu.values()){mSum+=o.sum;mN+=o.n;}
   const metrics=[
     {id:'Plan',key:'plan',unit:'pct',target:80,dir:'high',acc:den?pl.n/den*100:null},
     {id:'CorrPlan',key:'cp',unit:'pct',target:10,dir:'low',acc:den?cp.n/den*100:null},
     {id:'Emerg',key:'ce',unit:'pct',target:10,dir:'low',acc:den?ce.n/den*100:null},
-    {id:'Ader',key:'ader',unit:'pct',target:80,dir:'high',acc:prazo?(T.prazo+T.antec)/prazo*100:null},
+    {id:'Ader',key:'ader',unit:'pct',target:80,dir:'high',acc:prazoFin?(TFin.prazo+TFin.antec)/prazoFin*100:null},
     {id:'Backlog',key:'backlog',unit:'h',target:null,dir:null,acc:pendFiltrado().reduce((a,p)=>a+p[5],0)},
     {id:'Reactive',key:'react',unit:'pct',target:12,dir:'low',acc:TFin.n?np.reativa/TFin.n*100:null},
     {id:'MTTR',key:'mttr',unit:'h',target:null,dir:null,acc:pctil(hm,.5)},
@@ -7489,7 +7489,7 @@ function narrativa(T,co,coP,coE,pl,IMP,TP,den){
   const critA=agg(r=>r[4]===0), critAcorr=agg(r=>r[4]===0&&CORR.includes(r[2]));
   const pend=pendFiltrado();
   const velhas=pend.filter(p=>p[4]>90).length;
-  const ader=(T.prazo+T.atraso+T.antec)>0 ? (T.prazo+T.antec)/(T.prazo+T.atraso+T.antec) : null;
+  const ader=(TFin.prazo+TFin.atraso+TFin.antec)>0 ? (TFin.prazo+TFin.antec)/(TFin.prazo+TFin.atraso+TFin.antec) : null; // restrito a OS finalizadas, mesma regra da Execução Reativa
 
   el.innerHTML=`
     <p>No período <b>${faixa()}</b>, ${state.us===null?'a frota':umaUsina()?'a usina <b>'+uLabel()+'</b>':'o grupo <b>'+uLabel()+'</b>'} executou
