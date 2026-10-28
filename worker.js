@@ -4,6 +4,11 @@
    - Expõe API REST simples sobre D1 para Planos de Ação e Análises
      de Falha, para que fiquem salvos online e compartilhados entre
      todos os usuários autenticados pelo Cloudflare Access.
+   - Expõe também /api/os (relação de Ordens de Serviço): guarda as
+     colunas originais da planilha (sem nenhum campo calculado — o
+     cálculo continua 100% no navegador, como sempre), para que o
+     assistente possa atualizar a base direto por este Worker, sem
+     passar por upload manual de Excel nem por novo deploy do painel.
    ============================================================ */
 
 const TABLES = { analyses: 'analyses', actions: 'actions' };
@@ -72,6 +77,72 @@ async function handleApi(request, env, url) {
       return json({ ok: true });
     }
     return json({ error: 'Método não suportado.' }, 405);
+  } catch (err) {
+    return json({ error: String(err && err.message || err) }, 500);
+  }
+}
+
+/* ------------------------------------------------------------
+   Relação de Ordens de Serviço: cada linha fica guardada como
+   um JSON com as colunas originais da planilha (as mesmas 56
+   colunas "Grupo | Subcampo" que o painel já sabe ler), em
+   `os_relacao.data`. Nenhum campo calculado é salvo aqui — classe,
+   situação, criticidade, variação de prazo, execução reativa,
+   origem etc. continuam sendo calculados no navegador, pela mesma
+   lógica (buildPayloadFromWorkbook) de sempre.
+
+   Protegido por uma chave de importação própria (cabeçalho
+   X-Import-Key, comparado com o secret IMPORT_KEY do Worker),
+   independente do Cloudflare Access — para permitir que a
+   importação seja feita por automação (o assistente, por este
+   Worker) mesmo que a rota tenha bypass de login configurado no
+   Access.
+   ------------------------------------------------------------ */
+async function handleOsImport(request, env) {
+  const key = request.headers.get('X-Import-Key');
+  if (!env.IMPORT_KEY || !key || key !== env.IMPORT_KEY) {
+    return json({ error: 'Não autorizado.' }, 401);
+  }
+
+  let rows;
+  try {
+    rows = await request.json();
+  } catch (e) {
+    return json({ error: 'JSON inválido no corpo da requisição.' }, 400);
+  }
+  if (!Array.isArray(rows)) {
+    return json({ error: 'Esperado um array de registros (cada um é um objeto com as colunas da planilha).' }, 400);
+  }
+
+  const now = new Date().toISOString();
+  try {
+    // Substituição total da base (igual ao fluxo atual de "Atualizar base":
+    // a planilha enviada é sempre a relação completa, não um incremento).
+    await env.DB.prepare('DELETE FROM os_relacao').run();
+
+    const CHUNK = 200; // conservador: fica bem abaixo do limite de variáveis por statement do D1,
+                        // já que cada INSERT aqui usa só 2 parâmetros e vai num batch() por fora.
+    let inserted = 0;
+    for (let i = 0; i < rows.length; i += CHUNK) {
+      const slice = rows.slice(i, i + CHUNK);
+      const stmts = slice.map(r =>
+        env.DB.prepare('INSERT INTO os_relacao (data, updated_at) VALUES (?, ?)').bind(JSON.stringify(r), now)
+      );
+      await env.DB.batch(stmts);
+      inserted += slice.length;
+    }
+    return json({ ok: true, inserted, updated_at: now });
+  } catch (err) {
+    return json({ error: String(err && err.message || err) }, 500);
+  }
+}
+
+async function handleOsList(env) {
+  try {
+    const { results } = await env.DB.prepare('SELECT data, updated_at FROM os_relacao').all();
+    const items = results.map(r => JSON.parse(r.data));
+    const updatedAt = results.length ? results[0].updated_at : null;
+    return json({ items, updated_at: updatedAt, total: items.length });
   } catch (err) {
     return json({ error: String(err && err.message || err) }, 500);
   }
@@ -156,6 +227,12 @@ export default {
     if (url.pathname === '/api/me') {
       const email = userEmail(request);
       return json({ email, isDocsAdmin: email.toLowerCase() === DOCS_ADMIN_EMAIL.toLowerCase() });
+    }
+    if (url.pathname === '/api/os/import' && request.method === 'POST') {
+      return handleOsImport(request, env);
+    }
+    if (url.pathname === '/api/os' && request.method === 'GET') {
+      return handleOsList(env);
     }
     if (url.pathname.startsWith('/api/docs')) {
       const parts = url.pathname.split('/').filter(Boolean); // ['api','docs', maybe id, maybe 'download']
