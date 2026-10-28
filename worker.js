@@ -98,7 +98,7 @@ async function handleApi(request, env, url) {
    Worker) mesmo que a rota tenha bypass de login configurado no
    Access.
    ------------------------------------------------------------ */
-async function handleOsImport(request, env) {
+async function handleOsImport(request, env, url) {
   const key = request.headers.get('X-Import-Key');
   if (!env.IMPORT_KEY || !key || key !== env.IMPORT_KEY) {
     return json({ error: 'Não autorizado.' }, 401);
@@ -116,9 +116,14 @@ async function handleOsImport(request, env) {
 
   const now = new Date().toISOString();
   try {
-    // Substituição total da base (igual ao fluxo atual de "Atualizar base":
-    // a planilha enviada é sempre a relação completa, não um incremento).
-    await env.DB.prepare('DELETE FROM os_relacao').run();
+    // Só apaga a base anterior quando for o primeiro lote de uma importação
+    // (?first=1). Isso permite enviar a relação completa em vários POSTs
+    // menores (o corpo de uma requisição tem limite de tamanho no Worker),
+    // sem que cada lote apague o que o lote anterior acabou de gravar.
+    const isFirst = url.searchParams.get('first') === '1';
+    if (isFirst) {
+      await env.DB.prepare('DELETE FROM os_relacao').run();
+    }
 
     const CHUNK = 200; // conservador: fica bem abaixo do limite de variáveis por statement do D1,
                         // já que cada INSERT aqui usa só 2 parâmetros e vai num batch() por fora.
@@ -229,7 +234,7 @@ export default {
       return json({ email, isDocsAdmin: email.toLowerCase() === DOCS_ADMIN_EMAIL.toLowerCase() });
     }
     if (url.pathname === '/api/os/import' && request.method === 'POST') {
-      return handleOsImport(request, env);
+      return handleOsImport(request, env, url);
     }
     if (url.pathname === '/api/os' && request.method === 'GET') {
       return handleOsList(env);
