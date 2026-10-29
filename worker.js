@@ -142,12 +142,24 @@ async function handleOsImport(request, env, url) {
   }
 }
 
-async function handleOsList(env) {
+async function handleOsList(env, url) {
   try {
-    const { results } = await env.DB.prepare('SELECT data, updated_at FROM os_relacao').all();
+    // A relação inteira (dezenas de milhares de OS) é grande demais para vir
+    // numa resposta só — o binding do D1 e o limite de memória do Worker não
+    // aguentam. Por isso essa rota é paginada (?offset=&limit=, limit máximo
+    // 5000) e o painel, do lado do navegador, varre as páginas e junta tudo
+    // antes de calcular (ver autoFetchOs/buildPayloadFromApi no index.html).
+    const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '5000', 10) || 5000, 1), 5000);
+    const offset = Math.max(parseInt(url.searchParams.get('offset') || '0', 10) || 0, 0);
+
+    const countRow = await env.DB.prepare('SELECT COUNT(*) as n, MAX(updated_at) as u FROM os_relacao').first();
+    const total = countRow ? countRow.n : 0;
+    const updatedAt = countRow ? countRow.u : null;
+
+    const { results } = await env.DB.prepare('SELECT data FROM os_relacao ORDER BY id LIMIT ? OFFSET ?').bind(limit, offset).all();
     const items = results.map(r => JSON.parse(r.data));
-    const updatedAt = results.length ? results[0].updated_at : null;
-    return json({ items, updated_at: updatedAt, total: items.length });
+
+    return json({ items, updated_at: updatedAt, total, offset, limit, returned: items.length });
   } catch (err) {
     return json({ error: String(err && err.message || err) }, 500);
   }
@@ -237,7 +249,7 @@ export default {
       return handleOsImport(request, env, url);
     }
     if (url.pathname === '/api/os' && request.method === 'GET') {
-      return handleOsList(env);
+      return handleOsList(env, url);
     }
     if (url.pathname.startsWith('/api/docs')) {
       const parts = url.pathname.split('/').filter(Boolean); // ['api','docs', maybe id, maybe 'download']

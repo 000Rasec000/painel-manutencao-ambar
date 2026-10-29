@@ -8816,13 +8816,26 @@ function buildFakeDenseSheetFromApiRows(apiRows){
 }
 
 async function buildPayloadFromApi(){
-  const resp = await fetch('/api/os', {cache:'no-store'});
-  if(!resp.ok) throw new Error('HTTP '+resp.status+' ao buscar /api/os');
-  const data = await resp.json();
-  if(!data || !Array.isArray(data.items) || !data.items.length) throw new Error('resposta de /api/os sem registros');
-  const ws = buildFakeDenseSheetFromApiRows(data.items);
+  // /api/os é paginado (dezenas de milhares de OS não cabem numa resposta só) —
+  // varre todas as páginas e junta antes de montar a planilha falsa.
+  const LIMIT = 5000;
+  let offset = 0, total = Infinity, updatedAt = null;
+  const items = [];
+  while(offset < total){
+    const resp = await fetch('/api/os?limit='+LIMIT+'&offset='+offset, {cache:'no-store'});
+    if(!resp.ok) throw new Error('HTTP '+resp.status+' ao buscar /api/os (offset '+offset+')');
+    const data = await resp.json();
+    if(!data || !Array.isArray(data.items)) throw new Error('resposta de /api/os sem registros (offset '+offset+')');
+    items.push(...data.items);
+    total = typeof data.total === 'number' ? data.total : items.length;
+    updatedAt = data.updated_at || updatedAt;
+    if(!data.items.length) break;
+    offset += data.items.length;
+  }
+  if(!items.length) throw new Error('resposta de /api/os sem registros');
+  const ws = buildFakeDenseSheetFromApiRows(items);
   const wb = {SheetNames:['OS'], Sheets:{OS: ws}};
-  const nomeArq = 'api:/api/os' + (data.updated_at ? (' ('+data.updated_at+')') : '');
+  const nomeArq = 'api:/api/os' + (updatedAt ? (' ('+updatedAt+')') : '');
   return buildPayloadFromWorkbook(wb, nomeArq);
 }
 
