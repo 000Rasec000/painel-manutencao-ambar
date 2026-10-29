@@ -149,11 +149,20 @@ async function handleOsList(env, url) {
     // aguentam. Por isso essa rota é paginada (?offset=&limit=, limit máximo
     // 5000) e o painel, do lado do navegador, varre as páginas e junta tudo
     // antes de calcular (ver autoFetchOs/buildPayloadFromApi no index.html).
-    const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '1000', 10) || 1000, 1), 1000);
+    const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '4000', 10) || 4000, 1), 4000);
     const offset = Math.max(parseInt(url.searchParams.get('offset') || '0', 10) || 0, 0);
 
     const { results } = await env.DB.prepare('SELECT data, updated_at FROM os_relacao ORDER BY id LIMIT ? OFFSET ?').bind(limit, offset).all();
-    const items = results.map(r => JSON.parse(r.data));
+
+    // Formato colunar: em vez de repetir o nome das 56 colunas em cada uma das
+    // dezenas de milhares de linhas (o que quase dobra o tamanho da resposta
+    // à toa), manda a lista de colunas uma vez só e cada linha como array de
+    // valores na mesma ordem. O painel remonta os objetos do lado do navegador.
+    const colSet = new Set();
+    const parsed = results.map(r => JSON.parse(r.data));
+    for (const obj of parsed) for (const k of Object.keys(obj)) colSet.add(k);
+    const columns = [...colSet];
+    const rows = parsed.map(obj => columns.map(c => (c in obj ? obj[c] : null)));
     const updatedAt = results.length ? results[results.length - 1].updated_at : null;
 
     // total só é consultado na primeira página, pra não sobrecarregar o D1 com
@@ -161,10 +170,10 @@ async function handleOsList(env, url) {
     let total = null;
     if (offset === 0) {
       const countRow = await env.DB.prepare('SELECT COUNT(*) as n FROM os_relacao').first();
-      total = countRow ? countRow.n : items.length;
+      total = countRow ? countRow.n : rows.length;
     }
 
-    return json({ items, updated_at: updatedAt, total, offset, limit, returned: items.length });
+    return json({ columns, rows, updated_at: updatedAt, total, offset, limit, returned: rows.length });
   } catch (err) {
     return json({ error: String(err && err.message || err) }, 500);
   }
