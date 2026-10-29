@@ -8815,33 +8815,37 @@ function buildFakeDenseSheetFromApiRows(apiRows){
   return ws;
 }
 
-async function fetchOsPage(offset, limit, tentativa){
+async function fetchOsPage(page, tentativa){
   tentativa = tentativa || 0;
-  const resp = await fetch('/api/os?limit='+limit+'&offset='+offset, {cache:'no-store'});
+  // Cada página já vem pré-renderizada e pronta no servidor (tabela os_pages),
+  // montada uma única vez logo depois de cada importação — a leitura aqui não
+  // faz nenhum JSON.parse/stringify de centenas/milhares de linhas no Worker,
+  // o que no plano Free da Cloudflare esbarrava no limite de CPU por
+  // requisição (10ms) e causava 503 nas páginas maiores. Por isso não é mais
+  // preciso enviar limit/offset: o tamanho da página é fixo no servidor.
+  const resp = await fetch('/api/os?page='+page, {cache:'no-store'});
   if(!resp.ok){
     // 503/500/429 costumam ser throttling passageiro da Cloudflare/D1 — tenta de novo
     // bastante vezes, com espera crescente (até ~8s), antes de desistir de vez.
     if((resp.status===503||resp.status===500||resp.status===429) && tentativa<9){
       const espera = Math.min(8000, 300*Math.pow(1.6,tentativa));
       await new Promise(r=>setTimeout(r, espera));
-      return fetchOsPage(offset, limit, tentativa+1);
+      return fetchOsPage(page, tentativa+1);
     }
-    throw new Error('HTTP '+resp.status+' ao buscar /api/os (offset '+offset+')');
+    throw new Error('HTTP '+resp.status+' ao buscar /api/os (página '+page+')');
   }
   return resp.json();
 }
 
 async function buildPayloadFromApi(){
-  // /api/os é paginado e vem em formato colunar (columns + rows, sem repetir
-  // o nome das colunas em cada linha) — remonta os objetos aqui antes de montar
-  // a planilha falsa. Uma pequena pausa entre páginas evita rajadas de
-  // requisições que a Cloudflare/D1 às vezes responde com 503/429 (throttling).
-  const LIMIT = 4000;
-  let offset = 0, total = null, updatedAt = null;
+  // /api/os é paginado por número de página (?page=N) e vem em formato
+  // colunar (columns + rows, sem repetir o nome das colunas em cada linha) —
+  // remonta os objetos aqui antes de montar a planilha falsa.
+  let page = 0, total = null, updatedAt = null, offset = 0;
   const items = [];
   while(true){
-    const data = await fetchOsPage(offset, LIMIT);
-    if(!data || !Array.isArray(data.rows) || !Array.isArray(data.columns)) throw new Error('resposta de /api/os sem registros (offset '+offset+')');
+    const data = await fetchOsPage(page);
+    if(!data || !Array.isArray(data.rows) || !Array.isArray(data.columns)) throw new Error('resposta de /api/os sem registros (página '+page+')');
     const cols = data.columns;
     for(const r of data.rows){
       const obj = {};
@@ -8852,9 +8856,9 @@ async function buildPayloadFromApi(){
     updatedAt = data.updated_at || updatedAt;
     if(!data.rows.length) break;
     offset += data.rows.length;
+    page += 1;
     if(total!=null && offset>=total) break;
-    if(data.rows.length < LIMIT) break; // página incompleta = última página
-    await new Promise(r=>setTimeout(r, 150));
+    if(data.returned != null && data.limit != null && data.returned < data.limit) break; // página incompleta = última
   }
   if(!items.length) throw new Error('resposta de /api/os sem registros');
   const ws = buildFakeDenseSheetFromApiRows(items);

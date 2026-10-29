@@ -123,6 +123,9 @@ async function handleOsImport(request, env, url) {
     const isFirst = url.searchParams.get('first') === '1';
     if (isFirst) {
       await env.DB.prepare('DELETE FROM os_relacao').run();
+      // Limpa também o cache de páginas pré-renderizadas: senão o painel
+      // continuaria servindo páginas antigas até alguém reconstruir todas de novo.
+      await env.DB.prepare('DELETE FROM os_pages').run();
     }
 
     const CHUNK = 200; // conservador: fica bem abaixo do limite de variáveis por statement do D1,
@@ -142,22 +145,43 @@ async function handleOsImport(request, env, url) {
   }
 }
 
+// Tamanho fixo de página usado na pré-renderização (handleOsBuildPage) e na
+// leitura rápida por página (handleOsList com ?page=). Precisa combinar com
+// o LIMIT usado pelo painel em buildPayloadFromApi (index.html).
+const OS_PAGE_SIZE = 1000;
+
 async function handleOsList(env, url) {
   try {
-    // A relação inteira (dezenas de milhares de OS) é grande demais para vir
-    // numa resposta só — o binding do D1 e o limite de memória do Worker não
-    // aguentam. Por isso essa rota é paginada (?offset=&limit=, limit máximo
-    // 5000) e o painel, do lado do navegador, varre as páginas e junta tudo
-    // antes de calcular (ver autoFetchOs/buildPayloadFromApi no index.html).
-    const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '4000', 10) || 4000, 1), 4000);
+    // No plano Free do Workers cada requisição tem um orçamento de CPU de
+    // ~10ms. Fazer JSON.parse/stringify de milhares de linhas de uma vez (o
+    // caminho antigo, abaixo) ultrapassa esse limite e a requisição cai com
+    // 503 — mesmo que a consulta ao D1 em si seja rápida. Por isso, sempre
+    // que o painel pedir por número de página (?page=N), a resposta vem
+    // pronta, já formatada, de uma tabela de cache (os_pages), montada uma
+    // única vez em handleOsBuildPage logo depois de cada importação. Isso
+    // tira praticamente todo o trabalho de CPU do caminho de leitura: aqui é
+    // só um SELECT e devolver o texto já pronto, sem reprocessar nada.
+    const pageParam = url.searchParams.get('page');
+    if (pageParam !== null) {
+      const page = Math.max(parseInt(pageParam, 10) || 0, 0);
+      const row = await env.DB.prepare('SELECT body FROM os_pages WHERE page = ?').bind(page).first();
+      if (row && row.body) {
+        return new Response(row.body, { headers: { 'content-type': 'application/json; charset=utf-8' } });
+      }
+      // Página inexistente (além do fim dos dados, ou cache ainda não
+      // construído para ela): devolve uma resposta vazia, mas no mesmo
+      // formato, pra o painel simplesmente parar de paginar em vez de dar erro.
+      return json({ columns: [], rows: [], updated_at: null, total: null, offset: page * OS_PAGE_SIZE, limit: OS_PAGE_SIZE, returned: 0 });
+    }
+
+    // Caminho antigo (?offset=&limit=), mantido como fallback/depuração manual
+    // para fatias pequenas — consultas grandes por aqui ainda podem exceder o
+    // limite de CPU do plano Free.
+    const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '1000', 10) || 1000, 1), 4000);
     const offset = Math.max(parseInt(url.searchParams.get('offset') || '0', 10) || 0, 0);
 
     const { results } = await env.DB.prepare('SELECT data, updated_at FROM os_relacao ORDER BY id LIMIT ? OFFSET ?').bind(limit, offset).all();
 
-    // Formato colunar: em vez de repetir o nome das 56 colunas em cada uma das
-    // dezenas de milhares de linhas (o que quase dobra o tamanho da resposta
-    // à toa), manda a lista de colunas uma vez só e cada linha como array de
-    // valores na mesma ordem. O painel remonta os objetos do lado do navegador.
     const colSet = new Set();
     const parsed = results.map(r => JSON.parse(r.data));
     for (const obj of parsed) for (const k of Object.keys(obj)) colSet.add(k);
@@ -165,8 +189,6 @@ async function handleOsList(env, url) {
     const rows = parsed.map(obj => columns.map(c => (c in obj ? obj[c] : null)));
     const updatedAt = results.length ? results[results.length - 1].updated_at : null;
 
-    // total só é consultado na primeira página, pra não sobrecarregar o D1 com
-    // um COUNT(*) a cada chamada — as páginas seguintes repetem o último total conhecido.
     let total = null;
     if (offset === 0) {
       const countRow = await env.DB.prepare('SELECT COUNT(*) as n FROM os_relacao').first();
@@ -174,6 +196,52 @@ async function handleOsList(env, url) {
     }
 
     return json({ columns, rows, updated_at: updatedAt, total, offset, limit, returned: rows.length });
+  } catch (err) {
+    return json({ error: String(err && err.message || err) }, 500);
+  }
+}
+
+/* ------------------------------------------------------------
+   Pré-renderização das páginas de /api/os (uma de cada vez, sob
+   demanda da automação de importação — nunca do navegador do
+   usuário). Protegida pela mesma chave X-Import-Key.
+
+   Cada chamada processa só OS_PAGE_SIZE linhas (bem abaixo do que
+   já se mostrou estourar o limite de CPU do plano Free), monta o
+   JSON final no mesmo formato colunar que o painel espera, e grava
+   esse texto pronto na tabela os_pages. Depois disso, ler essa
+   página via GET /api/os?page=N não faz nenhum parse/stringify —
+   só um SELECT e devolve o texto como está.
+   ------------------------------------------------------------ */
+async function handleOsBuildPage(request, env, url) {
+  const key = request.headers.get('X-Import-Key');
+  if (!env.IMPORT_KEY || !key || key !== env.IMPORT_KEY) {
+    return json({ error: 'Não autorizado.' }, 401);
+  }
+  try {
+    const page = Math.max(parseInt(url.searchParams.get('page') || '0', 10) || 0, 0);
+    const offset = page * OS_PAGE_SIZE;
+
+    const { results } = await env.DB.prepare('SELECT data, updated_at FROM os_relacao ORDER BY id LIMIT ? OFFSET ?').bind(OS_PAGE_SIZE, offset).all();
+
+    const colSet = new Set();
+    const parsed = results.map(r => JSON.parse(r.data));
+    for (const obj of parsed) for (const k of Object.keys(obj)) colSet.add(k);
+    const columns = [...colSet];
+    const rows = parsed.map(obj => columns.map(c => (c in obj ? obj[c] : null)));
+    const updatedAt = results.length ? results[results.length - 1].updated_at : new Date().toISOString();
+
+    const countRow = await env.DB.prepare('SELECT COUNT(*) as n FROM os_relacao').first();
+    const total = countRow ? countRow.n : rows.length;
+
+    const body = JSON.stringify({ columns, rows, updated_at: updatedAt, total, offset, limit: OS_PAGE_SIZE, returned: rows.length });
+
+    await env.DB.prepare(
+      `INSERT INTO os_pages (page, body, rows, updated_at) VALUES (?,?,?,?)
+       ON CONFLICT(page) DO UPDATE SET body = excluded.body, rows = excluded.rows, updated_at = excluded.updated_at`
+    ).bind(page, body, rows.length, updatedAt).run();
+
+    return json({ ok: true, page, rows: rows.length, total, hasMore: offset + rows.length < total });
   } catch (err) {
     return json({ error: String(err && err.message || err) }, 500);
   }
@@ -264,6 +332,9 @@ export default {
     }
     if (url.pathname === '/api/os' && request.method === 'GET') {
       return handleOsList(env, url);
+    }
+    if (url.pathname === '/api/os/build-page' && request.method === 'POST') {
+      return handleOsBuildPage(request, env, url);
     }
     if (url.pathname.startsWith('/api/docs')) {
       const parts = url.pathname.split('/').filter(Boolean); // ['api','docs', maybe id, maybe 'download']
