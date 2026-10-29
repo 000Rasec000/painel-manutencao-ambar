@@ -8815,22 +8815,36 @@ function buildFakeDenseSheetFromApiRows(apiRows){
   return ws;
 }
 
+async function fetchOsPage(offset, limit, tentativa){
+  tentativa = tentativa || 0;
+  const resp = await fetch('/api/os?limit='+limit+'&offset='+offset, {cache:'no-store'});
+  if(!resp.ok){
+    // o D1 às vezes fica momentaneamente ocupado logo depois de uma carga grande (503) — tenta de novo algumas vezes.
+    if((resp.status===503||resp.status===500) && tentativa<4){
+      await new Promise(r=>setTimeout(r, 400*(tentativa+1)));
+      return fetchOsPage(offset, limit, tentativa+1);
+    }
+    throw new Error('HTTP '+resp.status+' ao buscar /api/os (offset '+offset+')');
+  }
+  return resp.json();
+}
+
 async function buildPayloadFromApi(){
   // /api/os é paginado (dezenas de milhares de OS não cabem numa resposta só) —
   // varre todas as páginas e junta antes de montar a planilha falsa.
-  const LIMIT = 5000;
-  let offset = 0, total = Infinity, updatedAt = null;
+  const LIMIT = 1000;
+  let offset = 0, total = null, updatedAt = null;
   const items = [];
-  while(offset < total){
-    const resp = await fetch('/api/os?limit='+LIMIT+'&offset='+offset, {cache:'no-store'});
-    if(!resp.ok) throw new Error('HTTP '+resp.status+' ao buscar /api/os (offset '+offset+')');
-    const data = await resp.json();
+  while(true){
+    const data = await fetchOsPage(offset, LIMIT);
     if(!data || !Array.isArray(data.items)) throw new Error('resposta de /api/os sem registros (offset '+offset+')');
     items.push(...data.items);
-    total = typeof data.total === 'number' ? data.total : items.length;
+    if(typeof data.total === 'number') total = data.total;
     updatedAt = data.updated_at || updatedAt;
     if(!data.items.length) break;
     offset += data.items.length;
+    if(total!=null && offset>=total) break;
+    if(data.items.length < LIMIT) break; // página incompleta = última página
   }
   if(!items.length) throw new Error('resposta de /api/os sem registros');
   const ws = buildFakeDenseSheetFromApiRows(items);
