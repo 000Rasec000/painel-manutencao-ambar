@@ -123,9 +123,18 @@ async function handleOsImport(request, env, url) {
     const isFirst = url.searchParams.get('first') === '1';
     if (isFirst) {
       await env.DB.prepare('DELETE FROM os_relacao').run();
-      // Limpa também o cache de páginas pré-renderizadas: senão o painel
-      // continuaria servindo páginas antigas até alguém reconstruir todas de novo.
-      await env.DB.prepare('DELETE FROM os_pages').run();
+      // Limpa também o cache de páginas pré-renderizadas no R2: senão o
+      // painel continuaria servindo páginas antigas até alguém reconstruir
+      // todas de novo (e uma base menor deixaria sobrar páginas obsoletas
+      // no final, com dados de uma importação anterior).
+      let cursor = undefined;
+      do {
+        const listed = await env.DOCS_BUCKET.list({ prefix: OS_CACHE_PREFIX, cursor });
+        if (listed.objects.length) {
+          await env.DOCS_BUCKET.delete(listed.objects.map(o => o.key));
+        }
+        cursor = listed.truncated ? listed.cursor : undefined;
+      } while (cursor);
     }
 
     const CHUNK = 200; // conservador: fica bem abaixo do limite de variáveis por statement do D1,
@@ -148,25 +157,33 @@ async function handleOsImport(request, env, url) {
 // Tamanho fixo de página usado na pré-renderização (handleOsBuildPage) e na
 // leitura rápida por página (handleOsList com ?page=). Precisa combinar com
 // o LIMIT usado pelo painel em buildPayloadFromApi (index.html).
+// Mantido em 1000 (não maior) porque esse é o tamanho que já se confirmou
+// caber dentro do limite de CPU do Worker também no momento de MONTAR a
+// página (handleOsBuildPage faz JSON.parse/stringify de verdade, ao
+// contrário da leitura, que não processa nada).
 const OS_PAGE_SIZE = 1000;
+const OS_CACHE_PREFIX = 'os-cache/';
 
 async function handleOsList(env, url) {
   try {
     // No plano Free do Workers cada requisição tem um orçamento de CPU de
-    // ~10ms. Fazer JSON.parse/stringify de milhares de linhas de uma vez (o
-    // caminho antigo, abaixo) ultrapassa esse limite e a requisição cai com
-    // 503 — mesmo que a consulta ao D1 em si seja rápida. Por isso, sempre
-    // que o painel pedir por número de página (?page=N), a resposta vem
-    // pronta, já formatada, de uma tabela de cache (os_pages), montada uma
-    // única vez em handleOsBuildPage logo depois de cada importação. Isso
-    // tira praticamente todo o trabalho de CPU do caminho de leitura: aqui é
-    // só um SELECT e devolver o texto já pronto, sem reprocessar nada.
+    // ~10ms. Tanto fazer JSON.parse/stringify de milhares de linhas (o
+    // caminho antigo, abaixo) quanto só TRAZER centenas de KB/MB de volta
+    // pela binding do D1 já é o suficiente pra estourar esse limite e a
+    // requisição cair com 503/500 — mesmo que a consulta em si seja rápida
+    // (o gargalo é o volume de dados passando pela binding, não o SQL).
+    // Por isso, sempre que o painel pedir por número de página (?page=N), a
+    // resposta vem de um objeto já pronto no R2 (bucket DOCS_BUCKET, mesmo
+    // usado pelos documentos corporativos), montado uma única vez em
+    // handleOsBuildPage logo depois de cada importação. Ler do R2 e devolver
+    // os bytes direto (sem passar por JS) tem custo de CPU praticamente nulo,
+    // bem diferente de ler o mesmo volume pela binding do D1.
     const pageParam = url.searchParams.get('page');
     if (pageParam !== null) {
       const page = Math.max(parseInt(pageParam, 10) || 0, 0);
-      const row = await env.DB.prepare('SELECT body FROM os_pages WHERE page = ?').bind(page).first();
-      if (row && row.body) {
-        return new Response(row.body, { headers: { 'content-type': 'application/json; charset=utf-8' } });
+      const obj = await env.DOCS_BUCKET.get(OS_CACHE_PREFIX + 'page-' + page + '.json');
+      if (obj) {
+        return new Response(obj.body, { headers: { 'content-type': 'application/json; charset=utf-8' } });
       }
       // Página inexistente (além do fim dos dados, ou cache ainda não
       // construído para ela): devolve uma resposta vazia, mas no mesmo
@@ -209,9 +226,10 @@ async function handleOsList(env, url) {
    Cada chamada processa só OS_PAGE_SIZE linhas (bem abaixo do que
    já se mostrou estourar o limite de CPU do plano Free), monta o
    JSON final no mesmo formato colunar que o painel espera, e grava
-   esse texto pronto na tabela os_pages. Depois disso, ler essa
-   página via GET /api/os?page=N não faz nenhum parse/stringify —
-   só um SELECT e devolve o texto como está.
+   esse texto pronto no R2 (bucket DOCS_BUCKET, prefixo "os-cache/").
+   Depois disso, ler essa página via GET /api/os?page=N não passa
+   pelo D1 nem faz parse/stringify nenhum — é um GET de objeto no R2
+   e devolve os bytes direto.
    ------------------------------------------------------------ */
 async function handleOsBuildPage(request, env, url) {
   const key = request.headers.get('X-Import-Key');
@@ -236,10 +254,9 @@ async function handleOsBuildPage(request, env, url) {
 
     const body = JSON.stringify({ columns, rows, updated_at: updatedAt, total, offset, limit: OS_PAGE_SIZE, returned: rows.length });
 
-    await env.DB.prepare(
-      `INSERT INTO os_pages (page, body, rows, updated_at) VALUES (?,?,?,?)
-       ON CONFLICT(page) DO UPDATE SET body = excluded.body, rows = excluded.rows, updated_at = excluded.updated_at`
-    ).bind(page, body, rows.length, updatedAt).run();
+    await env.DOCS_BUCKET.put(OS_CACHE_PREFIX + 'page-' + page + '.json', body, {
+      httpMetadata: { contentType: 'application/json; charset=utf-8' },
+    });
 
     return json({ ok: true, page, rows: rows.length, total, hasMore: offset + rows.length < total });
   } catch (err) {
