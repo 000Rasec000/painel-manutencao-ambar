@@ -249,8 +249,18 @@ async function handleOsBuildPage(request, env, url) {
     const rows = parsed.map(obj => columns.map(c => (c in obj ? obj[c] : null)));
     const updatedAt = results.length ? results[results.length - 1].updated_at : new Date().toISOString();
 
-    const countRow = await env.DB.prepare('SELECT COUNT(*) as n FROM os_relacao').first();
-    const total = countRow ? countRow.n : rows.length;
+    // O total só é consultado se vier por parâmetro (?total=, calculado uma
+    // única vez por quem está chamando essa rota em lote) ou, na ausência
+    // dele, só na página 0. Um COUNT(*) por página, repetido para todas as
+    // páginas, lê a tabela inteira de novo a cada chamada — é isso que
+    // esgotou a cota diária de LEITURA do D1 (bem mais generosa que a de
+    // escrita, mas ainda finita) numa pré-renderização só.
+    const totalParam = url.searchParams.get('total');
+    let total = totalParam !== null ? (parseInt(totalParam, 10) || null) : null;
+    if (total === null && page === 0) {
+      const countRow = await env.DB.prepare('SELECT COUNT(*) as n FROM os_relacao').first();
+      total = countRow ? countRow.n : rows.length;
+    }
 
     const body = JSON.stringify({ columns, rows, updated_at: updatedAt, total, offset, limit: OS_PAGE_SIZE, returned: rows.length });
 
@@ -258,7 +268,7 @@ async function handleOsBuildPage(request, env, url) {
       httpMetadata: { contentType: 'application/json; charset=utf-8' },
     });
 
-    return json({ ok: true, page, rows: rows.length, total, hasMore: offset + rows.length < total });
+    return json({ ok: true, page, rows: rows.length, total, hasMore: rows.length === OS_PAGE_SIZE });
   } catch (err) {
     return json({ error: String(err && err.message || err) }, 500);
   }
