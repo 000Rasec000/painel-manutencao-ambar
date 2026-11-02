@@ -310,7 +310,7 @@ body[data-mode="pres"] .intelligence-grid{grid-template-columns:1fr!important}
 #backlogFrame{width:100%; border:0; display:block; background:#fff}
 </style>
 </head>
-<body data-mode="pres"><div id="unsavedBanner" style="position: sticky; top: 0px; z-index: 40; background: rgb(200, 82, 59); color: rgb(255, 255, 255); text-align: center; font-weight: 700; font-size: 12.5px; padding: 7px 10px;">Base recalculada mas ainda NÃO salva — clique em "Salvar painel" e baixe o novo arquivo para não perder a atualização ao fechar.</div>
+<body data-mode="pres">
 
 <header>
   <div class="hd">
@@ -8555,19 +8555,10 @@ function currentFileName(){
 }
 function markUnsaved(on){
   if(typeof MODO_PUBLICO!=='undefined'&&MODO_PUBLICO) return; /* na versão online não existe "Salvar painel" */
+  /* Tarja de aviso removida a pedido do usuário (02/11/2026) — hasUnsavedChanges continua
+     rastreado só para manter o aviso nativo do navegador no fechamento da aba (beforeunload),
+     sem exibir nenhuma faixa fixa no topo da tela. */
   hasUnsavedChanges=on;
-  let b=document.getElementById('unsavedBanner');
-  if(on){
-    if(!b){
-      b=document.createElement('div');
-      b.id='unsavedBanner';
-      b.style.cssText='position:sticky;top:0;z-index:40;background:#c8523b;color:#fff;text-align:center;font-weight:700;font-size:12.5px;padding:7px 10px';
-      b.textContent='Base recalculada mas ainda NÃO salva — clique em "Salvar painel" e baixe o novo arquivo para não perder a atualização ao fechar.';
-      document.body.insertBefore(b,document.body.firstChild);
-    }
-  }else if(b){
-    b.remove();
-  }
 }
 window.addEventListener('beforeunload',e=>{
   if(hasUnsavedChanges){e.preventDefault();e.returnValue='';}
@@ -8963,12 +8954,15 @@ fillPeriodo();
 render();
 
 (async function autoFetchOs(){
+  setLoading(true,'Atualizando o painel','Buscando a relação de OS mais recente pela API…');await nextFrame();
   try{
     const payload = await buildPayloadFromApi();
     applyPayload(payload);
     console.info('Base da relação de OS carregada automaticamente via /api/os.');
   }catch(e){
     console.warn('Não foi possível carregar a relação de OS pela API (/api/os); mantendo a base embutida no arquivo.', e);
+  }finally{
+    setLoading(false);
   }
 })();
 
