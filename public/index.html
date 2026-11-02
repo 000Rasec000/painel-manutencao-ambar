@@ -8828,24 +8828,66 @@ async function buildPayloadFromApi(){
   // /api/os é paginado por número de página (?page=N) e vem em formato
   // colunar (columns + rows, sem repetir o nome das colunas em cada linha) —
   // remonta os objetos aqui antes de montar a planilha falsa.
-  let page = 0, total = null, updatedAt = null, offset = 0;
+  //
+  // Baixar as páginas uma de cada vez, esperando o round-trip de rede de
+  // cada uma antes de pedir a próxima, é o maior motivo do carregamento às
+  // vezes demorar bastante — com ~79 páginas, isso soma dezenas de idas e
+  // vindas em sequência. Como cada página já é só uma leitura pronta no R2
+  // (sem custo de CPU no Worker, correção #40), não há razão para pedir uma
+  // de cada vez: o navegador aguenta tranquilamente várias requisições em
+  // paralelo para o mesmo domínio, então a página 0 é buscada primeiro (pra
+  // saber quantas páginas existem ao todo) e o restante é baixado em lotes
+  // de até MAX_CONCORRENTE páginas simultâneas — mesmo número de pedidos,
+  // só que em paralelo, sem nenhum custo adicional.
+  const MAX_CONCORRENTE = 8;
+  const primeira = await fetchOsPage(0);
+  if(!primeira || !Array.isArray(primeira.rows) || !Array.isArray(primeira.columns)) throw new Error('resposta de /api/os sem registros (página 0)');
+  const cols = primeira.columns;
+  const paginas = [primeira];
+  let updatedAt = primeira.updated_at || null;
+  const limit = primeira.limit;
+  const total = typeof primeira.total === 'number' ? primeira.total : null;
+  const avisaProgresso = (feitas,totalPaginas)=>{ try{ if(typeof setLoading==='function') setLoading(true,'Atualizando o painel',`Buscando a relação de OS mais recente pela API… (${feitas} de ${totalPaginas} páginas)`); }catch(_){} };
+
+  if(total!=null && limit>0){
+    // sabemos de antemão quantas páginas existem: busca o restante em paralelo, em lotes
+    const totalPaginas = Math.max(1, Math.ceil(total/limit));
+    avisaProgresso(1, totalPaginas);
+    for(let i=1;i<totalPaginas;i+=MAX_CONCORRENTE){
+      const lote = [];
+      for(let p=i;p<Math.min(i+MAX_CONCORRENTE,totalPaginas);p++) lote.push(p);
+      const resultados = await Promise.all(lote.map(p=>fetchOsPage(p)));
+      resultados.forEach((data,idx)=>{
+        const p = lote[idx];
+        if(!data || !Array.isArray(data.rows) || !Array.isArray(data.columns)) throw new Error('resposta de /api/os sem registros (página '+p+')');
+        paginas[p] = data;
+      });
+      avisaProgresso(Math.min(i+MAX_CONCORRENTE,totalPaginas), totalPaginas);
+    }
+  }else{
+    // total não veio na resposta (caso raro/resposta antiga): cai no caminho sequencial de
+    // sempre, descobrindo o fim pela primeira página incompleta ou vazia
+    let page = 1;
+    let continua = primeira.rows.length>0 && (primeira.returned==null || primeira.limit==null || primeira.returned>=primeira.limit);
+    while(continua){
+      const data = await fetchOsPage(page);
+      if(!data || !Array.isArray(data.rows) || !Array.isArray(data.columns)) throw new Error('resposta de /api/os sem registros (página '+page+')');
+      paginas[page] = data;
+      continua = data.rows.length>0 && data.returned!=null && data.limit!=null && data.returned>=data.limit;
+      page += 1;
+    }
+  }
+
   const items = [];
-  while(true){
-    const data = await fetchOsPage(page);
-    if(!data || !Array.isArray(data.rows) || !Array.isArray(data.columns)) throw new Error('resposta de /api/os sem registros (página '+page+')');
-    const cols = data.columns;
+  for(const data of paginas){
+    if(!data) continue;
+    if(data.updated_at) updatedAt = data.updated_at;
+    const dcols = data.columns || cols;
     for(const r of data.rows){
       const obj = {};
-      for(let i=0;i<cols.length;i++){ if(r[i]!=null) obj[cols[i]] = r[i]; }
+      for(let i=0;i<dcols.length;i++){ if(r[i]!=null) obj[dcols[i]] = r[i]; }
       items.push(obj);
     }
-    if(typeof data.total === 'number') total = data.total;
-    updatedAt = data.updated_at || updatedAt;
-    if(!data.rows.length) break;
-    offset += data.rows.length;
-    page += 1;
-    if(total!=null && offset>=total) break;
-    if(data.returned != null && data.limit != null && data.returned < data.limit) break; // página incompleta = última
   }
   if(!items.length) throw new Error('resposta de /api/os sem registros');
   const ws = buildFakeDenseSheetFromApiRows(items);
