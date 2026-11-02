@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <!DOCTYPE html><html lang="pt-BR"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -370,12 +369,12 @@ body[data-mode="pres"] .intelligence-grid{grid-template-columns:1fr!important}
           <div class="unit-actions"><button type="button" id="fDiscClear">Nenhuma</button><button type="button" id="fDiscDone">Concluir</button></div>
         </div>
       </details>
-      <label class="btn primary" for="fileUpload" title="Carregar uma nova relação de OS do Excel">Atualizar base</label>
+      <label class="btn primary" for="fileUpload" title="Carregar uma nova relação de OS do Excel" style="display: none;">Atualizar base</label>
       <input class="upload-input" id="fileUpload" type="file" accept=".xlsx,.xlsm,.xls" style="display: none;">
-      <button class="btn" id="btnCalc" title="Recalcular todo o painel com a base carregada">Calcular painel</button>
-      <button class="btn" id="btnSave" title="Baixar uma cópia do HTML já com a nova base incorporada">Salvar painel</button>
+      <button class="btn" id="btnCalc" title="Recalcular todo o painel com a base carregada" style="display: none;">Calcular painel</button>
+      <button class="btn" id="btnSave" title="Baixar uma cópia do HTML já com a nova base incorporada" style="display: none;">Salvar painel</button>
       <button class="btn" id="btnPrint">Exportar PDF</button>
-      <div class="updated" id="lastUpdated">Última atualização<br><b>26/10/2026, 12:32:16</b></div><div class="updated" id="cutoffDate">Data de Corte<br><b>25/10/2026</b></div>
+      <div class="updated" id="lastUpdated">Última atualização<br><b>26/10/2026, 12:32:16</b></div>
       
     </div>
   </div>
@@ -390,10 +389,10 @@ body[data-mode="pres"] .intelligence-grid{grid-template-columns:1fr!important}
     <span id="kpiScope">66.818 ordens de serviço · 22 meses · 26 usinas</span>
   </div>
   <div class="grid kpis" id="kpis"><div class="card kpi ok">
-    <div class="lbl">Manutenção Planejada</div><div class="val">85,4%</div><div class="foot"><span class="tag ok">+5,4 p.p. vs 80%</span></div><div class="foot-extra drillable" data-ci="0" data-ei="0" title="Clique para ver as OS">52.864 OS</div></div><div class="card kpi n">
-    <div class="lbl">Manutenção Corretiva Planejada</div><div class="val">6,5%</div><div class="foot"></div><div class="foot-extra drillable" data-ci="1" data-ei="0" title="Clique para ver as OS">4.001 OS</div><div class="foot-extra-dark" data-ci="1" data-ei="1">44,3% de toda a corretiva</div></div><div class="card kpi warn">
-    <div class="lbl">Manutenção Corretiva Emergencial</div><div class="val">8,1%</div><div class="foot">5.033 OS · 55,7% de toda a corretiva</div><div class="foot-extra drillable" data-ci="2" data-ei="0" title="Clique para ver as OS" style="font-size: 9.5px;">374 OS com prioridade "Emergência"</div><div class="foot-extra-dark drillable" data-ci="2" data-ei="1" title="Clique para ver as OS" style="font-size: 9px;">4.903 OS corretivas de execução reativa</div></div><div class="card kpi warn">
-    <div class="lbl">Aderência à programação</div><div class="val">74,7%</div><div class="foot">16.027 OS reprogramadas para depois (variação de 8 dias ou mais)</div><div class="foot-extra drillable" data-ci="3" data-ei="0" title="Clique para ver as OS" style="font-size: 10.5px;">9.822 OS com atraso de 8 a 30 dias</div><div class="foot-extra-dark drillable" data-ci="3" data-ei="1" title="Clique para ver as OS" style="font-size: 10px;">2.907 OS com atraso de 31 a 60 dias</div><div class="foot-extra-red drillable" data-ci="3" data-ei="2" title="Clique para ver as OS" style="font-size: 9px;">3.298 OS com atraso de 61 dias ou mais</div></div><div class="card kpi bad">
+    <div class="lbl">Manutenção Planejada REALIZADA</div><div class="val">85,4%</div><div class="foot"><span class="tag ok">+5,4 p.p. vs 80%</span></div><div class="foot-extra drillable" data-ci="0" data-ei="0" title="Clique para ver as OS">52.864 OS</div></div><div class="card kpi n">
+    <div class="lbl">Manutenção Corretiva Planejada REALIZADA</div><div class="val">6,5%</div><div class="foot"></div><div class="foot-extra drillable" data-ci="1" data-ei="0" title="Clique para ver as OS">4.001 OS</div><div class="foot-extra-dark" data-ci="1" data-ei="1">44,3% de toda a corretiva</div></div><div class="card kpi warn">
+    <div class="lbl">Manutenção Corretiva Emergencial REALIZADA</div><div class="val">8,1%</div><div class="foot">5.033 OS · 55,7% de toda a corretiva</div><div class="foot-extra drillable" data-ci="2" data-ei="0" title="Clique para ver as OS" style="font-size: 8.5px;">374 OS com prioridade "Emergência"</div><div class="foot-extra-dark drillable" data-ci="2" data-ei="1" title="Clique para ver as OS" style="font-size: 8px;">4.903 OS corretivas de execução reativa</div></div><div class="card kpi warn">
+    <div class="lbl">Aderência à programação pelos planos de manutenção</div><div class="val">74,7%</div><div class="foot">16.027 OS reprogramadas para depois (variação de 8 dias ou mais)</div><div class="foot-extra drillable" data-ci="3" data-ei="0" title="Clique para ver as OS" style="font-size: 9px;">9.822 OS com atraso de 8 a 30 dias</div><div class="foot-extra-dark drillable" data-ci="3" data-ei="1" title="Clique para ver as OS" style="font-size: 8.5px;">2.907 OS com atraso de 31 a 60 dias</div><div class="foot-extra-red drillable" data-ci="3" data-ei="2" title="Clique para ver as OS" style="font-size: 8px;">3.298 OS com atraso de 61 dias ou mais</div></div><div class="card kpi bad">
     <div class="lbl">Backlog pendente</div><div class="val">17.893,6 h</div><div class="foot">2.022 OS pendentes · divididos em:</div><div class="foot-extra-blue drillable" data-ci="4" data-ei="0" title="Clique para ver as OS">1.423 OS Preventivas</div><div class="foot-extra-red drillable" data-ci="4" data-ei="1" title="Clique para ver as OS">360 OS Corretivas</div><div class="foot-extra drillable" data-ci="4" data-ei="2" title="Clique para ver as OS">99 OS Preditiva</div><div class="foot-extra-dark drillable" data-ci="4" data-ei="3" title="Clique para ver as OS">79 OS Melhoria</div><div class="foot-extra drillable" data-ci="4" data-ei="4" title="Clique para ver as OS">61 OS Apoio e outros</div></div><div class="card kpi n">
     <div class="lbl">Execução reativa</div><div class="val">9,7%</div><div class="foot">6.126 OS abertas no dia do serviço ou depois</div><div class="foot-extra-red drillable" data-ci="5" data-ei="0" title="Clique para ver as OS">4.903 OS corretivas</div><div class="foot-extra drillable" data-ci="5" data-ei="1" title="Clique para ver as OS">564 OS Melhoria</div><div class="foot-extra-dark drillable" data-ci="5" data-ei="2" title="Clique para ver as OS">485 OS Apoio e outros</div><div class="foot-extra-blue drillable" data-ci="5" data-ei="3" title="Clique para ver as OS">174 OS Preditiva</div></div><div class="card kpi n">
     <div class="lbl">MTTR corretiva (mediana)</div><div class="val">3,6 h</div><div class="foot">média 80,2 h · espera média 66,0 h</div></div><div class="card kpi warn">
@@ -403,7 +402,7 @@ body[data-mode="pres"] .intelligence-grid{grid-template-columns:1fr!important}
       <div class="kpi-health-body"><canvas id="cHealthGauge" width="120" height="115" style="display: block; box-sizing: border-box; height: 115px; width: 120px;"></canvas><div class="health-gauge-value" id="healthScore">77%<small>Confiabilidade</small></div></div>
       <div class="health-mini-trend">
         <div class="lbl" style="font-weight:600;font-size:10px;letter-spacing:.03em;text-transform:none;color:var(--muted);margin-bottom:2px">Evolução no período selecionado</div>
-        <div class="cbox"><canvas id="cHealthGaugeTrend" width="750" height="180" style="display: block; box-sizing: border-box; height: 180px; width: 750px;"></canvas></div>
+        <div class="cbox"><canvas id="cHealthGaugeTrend" width="644" height="180" style="display: block; box-sizing: border-box; height: 180px; width: 644px;"></canvas></div>
       </div>
     </div>
     <div class="foot" id="healthStatus">Situação <b style="color:#F28C18">atenção</b>. Cobertura do cálculo: <b>100%</b> dos pesos disponíveis no recorte.</div>
@@ -415,7 +414,7 @@ body[data-mode="pres"] .intelligence-grid{grid-template-columns:1fr!important}
       <h3>Composição do trabalho de manutenção</h3>
       <div class="sub">Composição do trabalho: planejada, corretiva planejada e corretiva emergencial</div>
       <div class="cbox h200">
-        <canvas id="cGauge" style="box-sizing: border-box; display: block; height: 200px; width: 478px;" width="478" height="200"></canvas>
+        <canvas id="cGauge" style="box-sizing: border-box; display: block; height: 200px; width: 418px;" width="418" height="200"></canvas>
         <div id="gaugeFoot"><div style="font-size:30px;font-weight:650;letter-spacing:-.03em;color:#F28C18;font-variant-numeric:tabular-nums">91,9%</div>
     <div style="font-size:11px;color:var(--muted);margin-top:-2px;line-height:1.3">
       <b style="color:#5B7F58">85,4%</b> + <b style="color:#F28C18">6,5%</b></div></div>
@@ -435,7 +434,7 @@ body[data-mode="pres"] .intelligence-grid{grid-template-columns:1fr!important}
       <span class="clickhint">Duplo clique numa fatia para ver o detalhamento por usina.</span></div>
       <div class="sub" style="margin-top:14px">Mesma composição, por tempo (horas) realizado nas OSs</div>
       <div class="cbox h200">
-        <canvas id="cGaugeH" style="box-sizing: border-box; display: block; height: 200px; width: 478px;" width="478" height="200"></canvas>
+        <canvas id="cGaugeH" style="box-sizing: border-box; display: block; height: 200px; width: 418px;" width="418" height="200"></canvas>
         <div id="gaugeFootH"><div style="font-size:30px;font-weight:650;letter-spacing:-.03em;color:#C8523B;font-variant-numeric:tabular-nums">81,6%</div>
     <div style="font-size:11px;color:var(--muted);margin-top:-2px;line-height:1.3">
       <b style="color:#5B7F58">69,1%</b> + <b style="color:#F28C18">12,4%</b></div></div>
@@ -468,7 +467,7 @@ body[data-mode="pres"] .intelligence-grid{grid-template-columns:1fr!important}
     e o pior <b>Junho/2025</b> (66,8%) — amplitude de 22,8 p.p.
     Ficaram fora da comparação 1 mês
       (Outubro/2026 (parcial)).
-    A aderência à programação está em <b>74,7%</b>: 16.027 OS finalizadas tiveram a data postergada em 8 dias ou mais
+    A aderência à programação pelos planos de manutenção está em <b>74,7%</b>: 16.027 OS finalizadas tiveram a data postergada em 8 dias ou mais
     e 4.730 foram antecipadas em 8 dias ou mais.</p>
     <p>A corretiva é <b>pulverizada</b>: os 20 piores equipamentos respondem por
     <b>10%</b> das corretivas, e são necessários <b>350 ativos</b> para acumular metade delas.
@@ -520,14 +519,14 @@ body[data-mode="pres"] .intelligence-grid{grid-template-columns:1fr!important}
     <div class="card">
       <h3>Matriz classe × origem da OS</h3>
       <div class="sub">Corretiva vinda de plano é sintoma diferente de corretiva vinda de solicitação</div>
-      <div class="mtx" id="mtx" style="grid-template-columns: minmax(96px, 1.1fr) repeat(3, 1fr) 0.8fr;"><div class="h" style="text-align:left">Classe</div><div class="h">Plano</div><div class="h">Solicitação</div><div class="h">Avulsa</div><div class="h">Total</div><div class="r">Manutenção Corretiva Planejada</div><div class="empty" style="background:#F7F9FC;color:var(--ink)" title="Manutenção Corretiva Planejada · Plano de Manutenção: 0 OS (0,0%)">·</div><div class="c" style="background:rgba(29,78,137,0.179);color:var(--ink)" title="Manutenção Corretiva Planejada · Solicitação de Serviço: 3.756 OS (5,6%)">3.756</div><div class="c" style="background:rgba(29,78,137,0.116);color:var(--ink)" title="Manutenção Corretiva Planejada · Avulsa: 774 OS (1,2%)">774</div><div class="t">4.530</div><div class="r">Preventiva</div><div class="c" style="background:rgba(29,78,137,0.950);color:#fff" title="Preventiva · Plano de Manutenção: 40.243 OS (60,2%)">40.243</div><div class="c" style="background:rgba(29,78,137,0.186);color:var(--ink)" title="Preventiva · Solicitação de Serviço: 4.088 OS (6,1%)">4.088</div><div class="c" style="background:rgba(29,78,137,0.166);color:var(--ink)" title="Preventiva · Avulsa: 3.141 OS (4,7%)">3.141</div><div class="t">47.472</div><div class="r">Preditiva</div><div class="c" style="background:rgba(29,78,137,0.225);color:var(--ink)" title="Preditiva · Plano de Manutenção: 5.935 OS (8,9%)">5.935</div><div class="c" style="background:rgba(29,78,137,0.104);color:var(--ink)" title="Preditiva · Solicitação de Serviço: 189 OS (0,3%)">189</div><div class="c" style="background:rgba(29,78,137,0.103);color:var(--ink)" title="Preditiva · Avulsa: 158 OS (0,2%)">158</div><div class="t">6.282</div><div class="r">Melhoria</div><div class="empty" style="background:#F7F9FC;color:var(--ink)" title="Melhoria · Plano de Manutenção: 0 OS (0,0%)">·</div><div class="c" style="background:rgba(29,78,137,0.122);color:var(--ink)" title="Melhoria · Solicitação de Serviço: 1.028 OS (1,5%)">1.028</div><div class="c" style="background:rgba(29,78,137,0.116);color:var(--ink)" title="Melhoria · Avulsa: 767 OS (1,1%)">767</div><div class="t">1.795</div><div class="r">Apoio e outros</div><div class="c" style="background:rgba(29,78,137,0.104);color:var(--ink)" title="Apoio e outros · Plano de Manutenção: 193 OS (0,3%)">193</div><div class="c" style="background:rgba(29,78,137,0.114);color:var(--ink)" title="Apoio e outros · Solicitação de Serviço: 669 OS (1,0%)">669</div><div class="c" style="background:rgba(29,78,137,0.116);color:var(--ink)" title="Apoio e outros · Avulsa: 757 OS (1,1%)">757</div><div class="t">1.619</div><div class="r">Manutenção Corretiva Emergencial</div><div class="empty" style="background:#F7F9FC;color:var(--ink)" title="Manutenção Corretiva Emergencial · Plano de Manutenção: 0 OS (0,0%)">·</div><div class="c" style="background:rgba(29,78,137,0.189);color:var(--ink)" title="Manutenção Corretiva Emergencial · Solicitação de Serviço: 4.228 OS (6,3%)">4.228</div><div class="c" style="background:rgba(29,78,137,0.119);color:var(--ink)" title="Manutenção Corretiva Emergencial · Avulsa: 892 OS (1,3%)">892</div><div class="t">5.120</div><div class="r" style="font-weight:700">Total</div><div class="t">46.371</div><div class="t">13.958</div><div class="t">6.489</div><div class="t">66.818</div></div>
-      <div class="note" id="mtxNote"><b>7.984</b> corretivas (82,7%) nasceram de <b>solicitação de serviço</b> — demanda não
+      <div class="mtx" id="mtx" style="grid-template-columns: minmax(96px, 1.1fr) repeat(3, 1fr) 0.8fr;"><div class="h" style="text-align:left">Classe</div><div class="h">Plano</div><div class="h">Solicitação</div><div class="h">Avulsa</div><div class="h">Total</div><div class="r">Manutenção Corretiva Planejada</div><div class="empty" style="background:#F7F9FC;color:var(--ink)" title="Manutenção Corretiva Planejada · Plano de Manutenção: 0 OS (0,0%)">·</div><div class="c" style="background:rgba(29,78,137,0.172);color:var(--ink)" title="Manutenção Corretiva Planejada · Solicitação de Serviço: 3.280 OS (5,2%)">3.280</div><div class="c" style="background:rgba(29,78,137,0.116);color:var(--ink)" title="Manutenção Corretiva Planejada · Avulsa: 721 OS (1,1%)">721</div><div class="t">4.001</div><div class="r">Preventiva</div><div class="c" style="background:rgba(29,78,137,0.950);color:#fff" title="Preventiva · Plano de Manutenção: 38.508 OS (60,7%)">38.508</div><div class="c" style="background:rgba(29,78,137,0.182);color:var(--ink)" title="Preventiva · Solicitação de Serviço: 3.732 OS (5,9%)">3.732</div><div class="c" style="background:rgba(29,78,137,0.165);color:var(--ink)" title="Preventiva · Avulsa: 2.935 OS (4,6%)">2.935</div><div class="t">45.175</div><div class="r">Preditiva</div><div class="c" style="background:rgba(29,78,137,0.226);color:var(--ink)" title="Preditiva · Plano de Manutenção: 5.718 OS (9,0%)">5.718</div><div class="c" style="background:rgba(29,78,137,0.104);color:var(--ink)" title="Preditiva · Solicitação de Serviço: 179 OS (0,3%)">179</div><div class="c" style="background:rgba(29,78,137,0.103);color:var(--ink)" title="Preditiva · Avulsa: 157 OS (0,2%)">157</div><div class="t">6.054</div><div class="r">Melhoria</div><div class="empty" style="background:#F7F9FC;color:var(--ink)" title="Melhoria · Plano de Manutenção: 0 OS (0,0%)">·</div><div class="c" style="background:rgba(29,78,137,0.120);color:var(--ink)" title="Melhoria · Solicitação de Serviço: 915 OS (1,4%)">915</div><div class="c" style="background:rgba(29,78,137,0.116);color:var(--ink)" title="Melhoria · Avulsa: 720 OS (1,1%)">720</div><div class="t">1.635</div><div class="r">Apoio e outros</div><div class="c" style="background:rgba(29,78,137,0.104);color:var(--ink)" title="Apoio e outros · Plano de Manutenção: 190 OS (0,3%)">190</div><div class="c" style="background:rgba(29,78,137,0.114);color:var(--ink)" title="Apoio e outros · Solicitação de Serviço: 625 OS (1,0%)">625</div><div class="c" style="background:rgba(29,78,137,0.116);color:var(--ink)" title="Apoio e outros · Avulsa: 705 OS (1,1%)">705</div><div class="t">1.520</div><div class="r">Manutenção Corretiva Emergencial</div><div class="empty" style="background:#F7F9FC;color:var(--ink)" title="Manutenção Corretiva Emergencial · Plano de Manutenção: 0 OS (0,0%)">·</div><div class="c" style="background:rgba(29,78,137,0.192);color:var(--ink)" title="Manutenção Corretiva Emergencial · Solicitação de Serviço: 4.149 OS (6,5%)">4.149</div><div class="c" style="background:rgba(29,78,137,0.120);color:var(--ink)" title="Manutenção Corretiva Emergencial · Avulsa: 884 OS (1,4%)">884</div><div class="t">5.033</div><div class="r" style="font-weight:700">Total</div><div class="t">44.416</div><div class="t">12.880</div><div class="t">6.122</div><div class="t">63.418</div></div>
+      <div class="note" id="mtxNote"><b>7.429</b> corretivas (82,2%) nasceram de <b>solicitação de serviço</b> — demanda não
        prevista, o indicador mais honesto de falha.
        Nenhuma corretiva veio de plano de manutenção, o que é coerente: o plano gera trabalho programado, não conserto.
-       <b>1.666</b> (17,3%) foram abertas <b>avulsas</b>, sem plano nem solicitação — atenção de
+       <b>1.605</b> (17,8%) foram abertas <b>avulsas</b>, sem plano nem solicitação — atenção de
        governança: não passam pelo fluxo de priorização e ficam fora do funil de análise de falha.
-       Do lado planejado, 3.141 preventivas também são avulsas contra 40.243 vindas de plano.
-       Das <b>5.120</b> emergenciais, 892 foram abertas avulsas — emergência sem
+       Do lado planejado, 2.935 preventivas também são avulsas contra 38.508 vindas de plano.
+       Das <b>5.033</b> emergenciais, 884 foram abertas avulsas — emergência sem
        solicitação registrada é o pior caso para rastrear causa depois.</div>
     </div>
   </div>
@@ -561,42 +560,42 @@ body[data-mode="pres"] .intelligence-grid{grid-template-columns:1fr!important}
   <div class="grid director-kpi-grid pres-only" id="directorMetrics">
     <div class="card director-metric-card">
       <div class="metric-title"><h3>Manutenção Planejada</h3><span class="direction up"><b>↑</b> melhor</span></div><div class="sub">Meta ≥ 80% do universo de manutenção</div>
-      <div class="director-card-body"><div class="metric-trend"><canvas id="dTrendPlan" style="box-sizing: border-box; display: block; height: 230px; width: 486px;" width="486" height="230"></canvas></div><div class="mini-gauge"><canvas id="dGaugePlan" style="box-sizing: border-box; display: block; height: 145px; width: 150px;" width="150" height="145"></canvas><div class="mini-gauge-value" id="dGaugePlanValue">85,4%<small>Acumulado do período</small></div></div></div>
+      <div class="director-card-body"><div class="metric-trend"><canvas id="dTrendPlan" style="box-sizing: border-box; display: block; height: 230px; width: 406px;" width="406" height="230"></canvas></div><div class="mini-gauge"><canvas id="dGaugePlan" style="box-sizing: border-box; display: block; height: 145px; width: 150px;" width="150" height="145"></canvas><div class="mini-gauge-value" id="dGaugePlanValue">85,4%<small>Acumulado do período</small></div></div></div>
       <div class="note" id="dNotePlan">Variação do primeiro ao último mês com dado: <b>+17,5 p.p.</b>. Acumulado dentro da meta de pelo menos 80%. <span class="clickhint">Duplo clique numa barra ou no velocímetro para ver o detalhamento por usina.</span></div>
     </div>
     <div class="card director-metric-card">
       <div class="metric-title"><h3>Manutenção Corretiva Planejada</h3><span class="direction down"><b>↓</b> melhor</span></div><div class="sub">Meta ≤ 10% do universo de manutenção</div>
-      <div class="director-card-body"><div class="metric-trend"><canvas id="dTrendCorrPlan" style="box-sizing: border-box; display: block; height: 230px; width: 486px;" width="486" height="230"></canvas></div><div class="mini-gauge"><canvas id="dGaugeCorrPlan" style="box-sizing: border-box; display: block; height: 145px; width: 150px;" width="150" height="145"></canvas><div class="mini-gauge-value" id="dGaugeCorrPlanValue">6,5%<small>Acumulado do período</small></div></div></div>
+      <div class="director-card-body"><div class="metric-trend"><canvas id="dTrendCorrPlan" style="box-sizing: border-box; display: block; height: 230px; width: 406px;" width="406" height="230"></canvas></div><div class="mini-gauge"><canvas id="dGaugeCorrPlan" style="box-sizing: border-box; display: block; height: 145px; width: 150px;" width="150" height="145"></canvas><div class="mini-gauge-value" id="dGaugeCorrPlanValue">6,5%<small>Acumulado do período</small></div></div></div>
       <div class="note" id="dNoteCorrPlan">Variação do primeiro ao último mês com dado: <b>−7,0 p.p.</b>. Acumulado dentro da meta de menos de 10%. <span class="clickhint">Duplo clique numa barra ou no velocímetro para ver o detalhamento por usina.</span></div>
     </div>
     <div class="card director-metric-card">
       <div class="metric-title"><h3>Manutenção Corretiva Emergencial</h3><span class="direction down"><b>↓</b> melhor</span></div><div class="sub">Meta &lt; 10% do universo de manutenção</div>
-      <div class="director-card-body"><div class="metric-trend"><canvas id="dTrendEmerg" style="box-sizing: border-box; display: block; height: 230px; width: 486px;" width="486" height="230"></canvas></div><div class="mini-gauge"><canvas id="dGaugeEmerg" style="box-sizing: border-box; display: block; height: 145px; width: 150px;" width="150" height="145"></canvas><div class="mini-gauge-value" id="dGaugeEmergValue">8,1%<small>Acumulado do período</small></div></div></div>
+      <div class="director-card-body"><div class="metric-trend"><canvas id="dTrendEmerg" style="box-sizing: border-box; display: block; height: 230px; width: 406px;" width="406" height="230"></canvas></div><div class="mini-gauge"><canvas id="dGaugeEmerg" style="box-sizing: border-box; display: block; height: 145px; width: 150px;" width="150" height="145"></canvas><div class="mini-gauge-value" id="dGaugeEmergValue">8,1%<small>Acumulado do período</small></div></div></div>
       <div class="note" id="dNoteEmerg">Variação do primeiro ao último mês com dado: <b>−10,5 p.p.</b>. Acumulado dentro da meta de menos de 10%. <span class="clickhint">Duplo clique numa barra ou no velocímetro para ver o detalhamento por usina.</span></div>
     </div>
     <div class="card director-metric-card">
-      <div class="metric-title"><h3>Aderência à programação</h3><span class="direction up"><b>↑</b> melhor</span></div><div class="sub">Meta ≥ 80% das OS com referência de prazo</div>
-      <div class="director-card-body"><div class="metric-trend"><canvas id="dTrendAder" style="box-sizing: border-box; display: block; height: 230px; width: 486px;" width="486" height="230"></canvas></div><div class="mini-gauge"><canvas id="dGaugeAder" style="box-sizing: border-box; display: block; height: 145px; width: 150px;" width="150" height="145"></canvas><div class="mini-gauge-value" id="dGaugeAderValue">74,7%<small>Acumulado do período</small></div></div></div>
+      <div class="metric-title"><h3>Aderência à programação pelos planos de manutenção</h3><span class="direction up"><b>↑</b> melhor</span></div><div class="sub">Meta ≥ 80% das OS com referência de prazo</div>
+      <div class="director-card-body"><div class="metric-trend"><canvas id="dTrendAder" style="box-sizing: border-box; display: block; height: 230px; width: 406px;" width="406" height="230"></canvas></div><div class="mini-gauge"><canvas id="dGaugeAder" style="box-sizing: border-box; display: block; height: 145px; width: 150px;" width="150" height="145"></canvas><div class="mini-gauge-value" id="dGaugeAderValue">74,7%<small>Acumulado do período</small></div></div></div>
       <div class="note" id="dNoteAder">Variação do primeiro ao último mês com dado: <b>+13,5 p.p.</b>. Acumulado fora da meta de pelo menos 80%. <span class="clickhint">Duplo clique numa barra ou no velocímetro para ver o detalhamento por usina.</span></div>
     </div>
     <div class="card director-metric-card">
       <div class="metric-title"><h3>Backlog pendente (horas)</h3><span class="direction down"><b>↓</b> melhor</span></div><div class="sub">Horas previstas da carteira atual pelo mês programado</div>
-      <div class="director-card-body"><div class="metric-trend"><canvas id="dTrendBacklog" style="box-sizing: border-box; display: block; height: 230px; width: 486px;" width="486" height="230"></canvas></div><div class="mini-gauge"><canvas id="dGaugeBacklog" style="box-sizing: border-box; display: block; height: 145px; width: 150px;" width="150" height="145"></canvas><div class="mini-gauge-value" id="dGaugeBacklogValue">17.893,6 h<small>Acumulado do período · meta não definida</small></div></div></div>
+      <div class="director-card-body"><div class="metric-trend"><canvas id="dTrendBacklog" style="box-sizing: border-box; display: block; height: 230px; width: 406px;" width="406" height="230"></canvas></div><div class="mini-gauge"><canvas id="dGaugeBacklog" style="box-sizing: border-box; display: block; height: 145px; width: 150px;" width="150" height="145"></canvas><div class="mini-gauge-value" id="dGaugeBacklogValue">17.893,6 h<small>Acumulado do período · meta não definida</small></div></div></div>
       <div class="note" id="dNoteBacklog">Variação do primeiro ao último mês com dado: <b>14.458,0 h</b>. Sem meta corporativa cadastrada. A série mostra a carteira pendente atual pelo mês programado; não reconstrói fotografias históricas do backlog. <span class="clickhint">Duplo clique numa barra ou no velocímetro para ver o detalhamento por usina.</span></div>
     </div>
     <div class="card director-metric-card">
       <div class="metric-title"><h3>Execução reativa</h3><span class="direction down"><b>↓</b> melhor</span></div><div class="sub">Meta &lt; 12% das OS do escopo</div>
-      <div class="director-card-body"><div class="metric-trend"><canvas id="dTrendReactive" style="box-sizing: border-box; display: block; height: 230px; width: 486px;" width="486" height="230"></canvas></div><div class="mini-gauge"><canvas id="dGaugeReactive" style="box-sizing: border-box; display: block; height: 145px; width: 150px;" width="150" height="145"></canvas><div class="mini-gauge-value" id="dGaugeReactiveValue">9,7%<small>Acumulado do período</small></div></div></div>
+      <div class="director-card-body"><div class="metric-trend"><canvas id="dTrendReactive" style="box-sizing: border-box; display: block; height: 230px; width: 406px;" width="406" height="230"></canvas></div><div class="mini-gauge"><canvas id="dGaugeReactive" style="box-sizing: border-box; display: block; height: 145px; width: 150px;" width="150" height="145"></canvas><div class="mini-gauge-value" id="dGaugeReactiveValue">9,7%<small>Acumulado do período</small></div></div></div>
       <div class="note" id="dNoteReactive">Variação do primeiro ao último mês com dado: <b>−14,5 p.p.</b>. Acumulado dentro da meta de menos de 12%. <span class="clickhint">Duplo clique numa barra ou no velocímetro para ver o detalhamento por usina.</span></div>
     </div>
     <div class="card director-metric-card">
       <div class="metric-title"><h3>MTTR corretiva (mediana)</h3><span class="direction down"><b>↓</b> melhor</span></div><div class="sub">Horas por OS corretiva finalizada</div>
-      <div class="director-card-body"><div class="metric-trend"><canvas id="dTrendMTTR" style="box-sizing: border-box; display: block; height: 230px; width: 486px;" width="486" height="230"></canvas></div><div class="mini-gauge"><canvas id="dGaugeMTTR" style="box-sizing: border-box; display: block; height: 145px; width: 150px;" width="150" height="145"></canvas><div class="mini-gauge-value" id="dGaugeMTTRValue">3,6 h<small>Acumulado do período · meta não definida</small></div></div></div>
+      <div class="director-card-body"><div class="metric-trend"><canvas id="dTrendMTTR" style="box-sizing: border-box; display: block; height: 230px; width: 406px;" width="406" height="230"></canvas></div><div class="mini-gauge"><canvas id="dGaugeMTTR" style="box-sizing: border-box; display: block; height: 145px; width: 150px;" width="150" height="145"></canvas><div class="mini-gauge-value" id="dGaugeMTTRValue">3,6 h<small>Acumulado do período · meta não definida</small></div></div></div>
       <div class="note" id="dNoteMTTR">Variação do primeiro ao último mês com dado: <b>-246 min</b>. Sem meta corporativa cadastrada. <span class="clickhint">Duplo clique numa barra ou no velocímetro para ver o detalhamento por usina.</span></div>
     </div>
     <div class="card director-metric-card">
       <div class="metric-title"><h3>MTBF calendário</h3><span class="direction up"><b>↑</b> melhor</span></div><div class="sub">Dias entre corretivas finalizadas do mesmo ativo</div>
-      <div class="director-card-body"><div class="metric-trend"><canvas id="dTrendMTBF" style="box-sizing: border-box; display: block; height: 230px; width: 486px;" width="486" height="230"></canvas></div><div class="mini-gauge"><canvas id="dGaugeMTBF" style="box-sizing: border-box; display: block; height: 145px; width: 150px;" width="150" height="145"></canvas><div class="mini-gauge-value" id="dGaugeMTBFValue">47 dias<small>Acumulado do período · meta não definida</small></div></div></div>
+      <div class="director-card-body"><div class="metric-trend"><canvas id="dTrendMTBF" style="box-sizing: border-box; display: block; height: 230px; width: 406px;" width="406" height="230"></canvas></div><div class="mini-gauge"><canvas id="dGaugeMTBF" style="box-sizing: border-box; display: block; height: 145px; width: 150px;" width="150" height="145"></canvas><div class="mini-gauge-value" id="dGaugeMTBFValue">47 dias<small>Acumulado do período · meta não definida</small></div></div></div>
       <div class="note" id="dNoteMTBF">Variação do primeiro ao último mês com dado: <b>72 dias</b>. Sem meta corporativa cadastrada. <span class="clickhint">Duplo clique numa barra ou no velocímetro para ver o detalhamento por usina.</span></div>
     </div>
   </div>
@@ -610,7 +609,7 @@ body[data-mode="pres"] .intelligence-grid{grid-template-columns:1fr!important}
     <div class="card">
       <h3>Como a nota é formada</h3>
       <div class="sub">Componentes normalizados e contribuição de cada dimensão</div>
-      <div class="cbox h260"><canvas id="cHealthComponents" style="box-sizing: border-box; display: block; height: 260px; width: 1354px;" width="1354" height="260"></canvas></div>
+      <div class="cbox h260"><canvas id="cHealthComponents" style="box-sizing: border-box; display: block; height: 260px; width: 1194px;" width="1194" height="260"></canvas></div>
       <div class="health-formula" id="healthFormula"><b>Fórmula:</b> 25% Falhas críticas + 20% MTBF + 15% MTTR + 15% Backlog + 10% Execução reativa + 15% Aderência. Referências de normalização: falhas ponderadas ≤ 20%, MTBF ≥ 60 dias, MTTR ≤ 8 h, reativa ≤ 12% e aderência ≥ 80%. O backlog relaciona horas pendentes às horas executadas. Componentes sem base são retirados e os pesos disponíveis são recalculados.</div>
     </div>
   </div>
@@ -618,13 +617,13 @@ body[data-mode="pres"] .intelligence-grid{grid-template-columns:1fr!important}
     <div class="card">
       <h3>Comparação da saúde por usina</h3>
       <div class="sub">Benchmark entre as usinas selecionadas, com o mesmo período e filtros</div>
-      <div class="cbox h300"><canvas id="cHealthRanking" style="box-sizing: border-box; display: block; height: 300px; width: 602px;" width="602" height="300"></canvas></div>
+      <div class="cbox h300"><canvas id="cHealthRanking" style="box-sizing: border-box; display: block; height: 300px; width: 527px;" width="527" height="300"></canvas></div>
       <div class="note" id="healthRankingNote">Diferença entre a maior e a menor nota: <b>34 pontos</b>. A comparação considera somente as usinas selecionadas.</div>
     </div>
     <div class="card">
       <h3>Tendência da saúde do grupo</h3>
       <div class="sub">Resultado mensal do conjunto de usinas selecionado</div>
-      <div class="cbox h300"><canvas id="cHealthTrend" style="box-sizing: border-box; display: block; height: 300px; width: 698px;" width="698" height="300"></canvas></div>
+      <div class="cbox h300"><canvas id="cHealthTrend" style="box-sizing: border-box; display: block; height: 300px; width: 612px;" width="612" height="300"></canvas></div>
       <div class="note" id="healthTrendNote">Do primeiro ao último mês com dado, a saúde variou <b>+2 p.p.</b>. Barras verdes indicam a faixa saudável (≥ 80%). <span class="clickhint">Duplo clique numa barra ou no velocímetro de saúde para ver o detalhamento por usina.</span></div>
     </div>
   </div>
@@ -645,7 +644,7 @@ body[data-mode="pres"] .intelligence-grid{grid-template-columns:1fr!important}
     <div class="card pres-only">
       <h3>Benchmark de <i>bad actors</i> por usina</h3>
       <div class="sub">Barras = volume em ativos reincidentes · Linhas = acumulado e concentração dos 10 principais ativos</div>
-      <div class="cbox h300"><canvas id="cPlantPareto" style="box-sizing: border-box; display: block; height: 300px; width: 1354px;" width="1354" height="300"></canvas></div>
+      <div class="cbox h300"><canvas id="cPlantPareto" style="box-sizing: border-box; display: block; height: 300px; width: 1194px;" width="1194" height="300"></canvas></div>
       <div class="note" id="plantParetoNote">Benchmark normalizado: menor concentração nos 10 principais ativos em <b>UTE Floresta</b> (0,0%); maior em <b>UTE Anori</b> (96,0%). Compare também o volume absoluto das barras para não premiar artificialmente usinas com poucas OS.</div>
     </div>
     <div class="card eng-only">
@@ -950,17 +949,17 @@ body[data-mode="pres"] .intelligence-grid{grid-template-columns:1fr!important}
     <div class="card">
       <h3>Manutenção Planejada</h3>
       <div class="sub">Índice proativo por unidade · referência 80%</div>
-      <div class="cbox h300"><canvas id="cUnitPlan" style="box-sizing: border-box; display: block; height: 300px; width: 415px;" width="415" height="300"></canvas></div>
+      <div class="cbox h300"><canvas id="cUnitPlan" style="box-sizing: border-box; display: block; height: 300px; width: 362px;" width="362" height="300"></canvas></div>
     </div>
     <div class="card">
       <h3>MTTR</h3>
       <div class="sub">Horas médias por OS corretiva finalizada</div>
-      <div class="cbox h300"><canvas id="cUnitMTTR" style="box-sizing: border-box; display: block; height: 300px; width: 415px;" width="415" height="300"></canvas></div>
+      <div class="cbox h300"><canvas id="cUnitMTTR" style="box-sizing: border-box; display: block; height: 300px; width: 362px;" width="362" height="300"></canvas></div>
     </div>
     <div class="card">
       <h3>MTBF</h3>
       <div class="sub">Dias médios entre corretivas finalizadas do mesmo ativo</div>
-      <div class="cbox h300"><canvas id="cUnitMTBF" style="box-sizing: border-box; display: block; height: 300px; width: 415px;" width="415" height="300"></canvas></div>
+      <div class="cbox h300"><canvas id="cUnitMTBF" style="box-sizing: border-box; display: block; height: 300px; width: 362px;" width="362" height="300"></canvas></div>
     </div>
   </div>
 
@@ -6869,9 +6868,6 @@ function render(){
   const atu=DATA.atualizadoEm ? new Date(DATA.atualizadoEm) : new Date(DATA.gerado+'T00:00:00');
   const atuTxt=isNaN(atu)?DATA.gerado:atu.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'medium'});
   document.getElementById('lastUpdated').innerHTML=`Última atualização<br><b>${atuTxt}</b>`;
-  const corte=new Date(DATA.extracao+'T00:00:00');
-  const corteTxt=isNaN(corte)?DATA.extracao:corte.toLocaleDateString('pt-BR');
-  document.getElementById('cutoffDate').innerHTML=`Data de Corte<br><b>${corteTxt}</b>`;
   document.getElementById('ftStatus').textContent =
     `${int(DATA.dq.os_unicas)} OS extraídas de ${int(DATA.dq.linhas_planilha)} linhas · dados até ${DATA.extracao.split('-').reverse().join('/')}`;
   document.getElementById('ftFormula').textContent =
@@ -6968,19 +6964,19 @@ function kpis(T,co,coP,coE,pl,IMP,TP,den){
     reativaDrill.push(()=>({titulo:`Execução reativa · ${D.classes[+cls]}`, lista:osdList(d=>reativaBase(d)&&d[3]===+cls)}));
   });
   const cards=[
-    { c: gapIMP>=0?'ok':gapIMP>=-5?'warn':'bad', lbl:'Manutenção Planejada', val:pct(IMP),
+    { c: gapIMP>=0?'ok':gapIMP>=-5?'warn':'bad', lbl:'Manutenção Planejada REALIZADA', val:pct(IMP),
       foot:`<span class="tag ${gapIMP>=0?'ok':'bad'}">${pp(gapIMP)} vs 80%</span>`,
       extra:[`${int(pl.n)} OS`], extraCls:['foot-extra'],
       drill:[
         ()=>({titulo:'Manutenção Planejada', lista:osdList(d=>PLAN.includes(d[3])&&d[5]===0)})
       ] },
-    { c: 'n', lbl:'Manutenção Corretiva Planejada', val:pct(coP.n/den),
+    { c: 'n', lbl:'Manutenção Corretiva Planejada REALIZADA', val:pct(coP.n/den),
       foot:'',
       extra:[`${int(coP.n)} OS`,`${pct(coP.n/Math.max(1,co.n))} de toda a corretiva`], extraCls:['foot-extra','foot-extra-dark'],
       drill:[
         ()=>({titulo:'Manutenção Corretiva Planejada', lista:osdList(d=>d[3]===CORR_P&&d[5]===0)})
       ] },
-    { c: shEmerg>0.10?'bad':shEmerg>0.05?'warn':'ok', lbl:'Manutenção Corretiva Emergencial', val:pct(shEmerg),
+    { c: shEmerg>0.10?'bad':shEmerg>0.05?'warn':'ok', lbl:'Manutenção Corretiva Emergencial REALIZADA', val:pct(shEmerg),
       foot:`${int(coE.n)} OS · ${pct(coE.n/Math.max(1,co.n))} de toda a corretiva`,
       extra:[`${int(coE.prio0)} OS com prioridade "Emergência"`,
              `${int(coE.reativa)} OS corretivas de execução reativa`],
@@ -6989,7 +6985,7 @@ function kpis(T,co,coP,coE,pl,IMP,TP,den){
         ()=>({titulo:'Corretiva Emergencial · Prioridade "Emergência"', lista:osdList(d=>d[3]===CORR_E&&d[12]===0&&d[5]===0)}),
         ()=>({titulo:'Corretiva Emergencial · Execução reativa', lista:osdList(d=>d[3]===CORR_E&&d[16]===1&&d[5]===0)})
       ] },
-    { c: ader>=0.85?'ok':ader>=0.7?'warn':'bad', lbl:'Aderência à programação', val:pct(ader),
+    { c: ader>=0.85?'ok':ader>=0.7?'warn':'bad', lbl:'Aderência à programação pelos planos de manutenção', val:pct(ader),
       foot:`${int(atrasoTotal)} OS reprogramadas para depois (variação de 8 dias ou mais)`,
       extra:[`${int(TFin.atraso8_30)} OS com atraso de 8 a 30 dias`,
              `${int(TFin.atraso31_60)} OS com atraso de 31 a 60 dias`,
@@ -7219,7 +7215,7 @@ function dynamicAxisMax(values,target,unit){
 }
 
 const NOME_METRICA={Plan:'Manutenção Planejada',CorrPlan:'Corretiva Planejada',Emerg:'Emergencial',
-  Ader:'Aderência à Programação',Backlog:'Backlog',Reactive:'Execução Reativa',MTTR:'MTTR',MTBF:'MTBF'};
+  Ader:'Aderência à Programação pelos Planos de Manutenção',Backlog:'Backlog',Reactive:'Execução Reativa',MTTR:'MTTR',MTBF:'MTBF'};
 /* ------------------------------------------------------------ valores por usina individual (para o popup de detalhamento) */
 function aggUsinaMes(u,mi,pred){
   const o=M0();
@@ -7533,7 +7529,7 @@ function narrativa(T,co,coP,coE,pl,IMP,TP,den,coPFin,coEFin,plFin,impFin,tpFin,d
     e o pior <b>${lblF(pior.mi)}</b> (${pct(pior.imp)}) — amplitude de ${fx((melhor.imp-pior.imp)*100,1)} p.p.
     `:''}${cmp.length<mm.length?`Ficaram fora da comparação ${mm.length-cmp.length} ${mm.length-cmp.length===1?'mês':'meses'}
       (${mm.filter(m=>!confiavel(m.mi)).map(m=>rotuloMes(m.mi)).join(', ')}).`:''}
-    A aderência à programação está em <b>${pct(ader)}</b>: ${int(TFin.atraso8_30+TFin.atraso31_60+TFin.atraso61)} OS finalizadas tiveram a data postergada em 8 dias ou mais
+    A aderência à programação pelos planos de manutenção está em <b>${pct(ader)}</b>: ${int(TFin.atraso8_30+TFin.atraso31_60+TFin.atraso61)} OS finalizadas tiveram a data postergada em 8 dias ou mais
     e ${int(TFin.antec8)} foram antecipadas em 8 dias ou mais.</p>
     <p>A corretiva é <b>${concentrada?'concentrada':'pulverizada'}</b>: os 20 piores equipamentos respondem por
     <b>${fx(shareTop20,0)}%</b> das corretivas${nMeio?`, e são necessários <b>${nMeio} ativos</b> para acumular metade delas`:''}.
@@ -7641,7 +7637,7 @@ function matriz(){
   const el=document.getElementById('mtx');
   const nC=D.classes.length, nO=D.origens.length;
   const m=Array.from({length:nC},()=>new Array(nO).fill(0));
-  for(const r of DATA.cube) if(noEsc(r)) m[r[2]][r[3]]+=r[6];
+  for(const r of DATA.cube) if(noEsc(r) && r[5]===0) m[r[2]][r[3]]+=r[6];
   const usadas=[...Array(nC).keys()].filter(i=>m[i].some(v=>v>0));
   const tot=m.flat().reduce((a,b)=>a+b,0)||1;
   const maxv=Math.max(...m.flat());
@@ -7941,9 +7937,9 @@ function unitComparison(){
       if(!incluiCrit(r[4])) continue;
       if(!incluiDisc(r[25])) continue;
       if(!incluiSit(r[5])) continue;
-      acc(T,r); if(CORR.includes(r[2])&&r[5]===0) acc(co,r); if(PLAN.includes(r[2])) acc(pl,r);
+      acc(T,r); if(CORR.includes(r[2])&&r[5]===0) acc(co,r); if(PLAN.includes(r[2])&&r[5]===0) acc(pl,r);
     }
-    const corrTotal=DATA.cube.reduce((a,r)=>a+(r[1]===u&&r[0]>=state.from&&r[0]<=state.to&&(incluiCrit(r[4]))&&(incluiDisc(r[25]))&&(incluiSit(r[5]))&&CORR.includes(r[2])?r[6]:0),0);
+    const corrTotal=DATA.cube.reduce((a,r)=>a+(r[1]===u&&r[0]>=state.from&&r[0]<=state.to&&(incluiCrit(r[4]))&&(incluiDisc(r[25]))&&(incluiSit(r[5]))&&CORR.includes(r[2])&&r[5]===0?r[6]:0),0);
     const m=mu.get(u);
     return {u,n:T.n,plan:(pl.n+corrTotal)?pl.n/(pl.n+corrTotal):null,
       mttr:co.durN?co.durSum/co.durN:null,mtbf:m&&m.n?m.sum/m.n:null};
