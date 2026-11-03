@@ -6596,7 +6596,22 @@ let RAMPA = new Set(DATA.rampa || []);         // meses de implantação, amostr
 const confiavel = mi => mi!==MI_PARCIAL && !RAMPA.has(mi);
 const rotuloMes = mi => lblF(mi) + (mi===MI_PARCIAL?' (parcial)':RAMPA.has(mi)?' (amostra pequena)':'');
 
-const state = { from:0, to:NMI, u:-1, us:null, crit:null, sit:null, disc:null, mode:'pres', sel:0, pendSit:-1 };
+// Período padrão do painel: Janeiro/2026 até o mês anterior ao mês corrente (data real do
+// dispositivo que está com a página aberta, não a data de geração/extração da base) — pedido
+// do usuário em 03/11/2026, para abrir sempre no "ano corrente até o fechamento do mês
+// passado" sem precisar selecionar manualmente, acompanhando o avanço do calendário sozinho.
+// Usada tanto no carregamento inicial (abaixo) quanto sempre que a base é recalculada/recarregada
+// (applyPayload), para que o período volte a esse padrão em vez de ficar preso ao mês mais antigo.
+function defaultPeriodo(){
+  const hojeReal=new Date();
+  let mAntY=hojeReal.getFullYear(), mAntM=hojeReal.getMonth(); // getMonth() já é 0-based = mês anterior em base 1
+  if(mAntM===0){ mAntM=12; mAntY-=1; }
+  const miJan2026=2026*12+1-1-DATA.base, miMesAnterior=mAntY*12+mAntM-1-DATA.base;
+  const from=Math.max(0,Math.min(NMI,miJan2026)), to=Math.max(from,Math.min(NMI,miMesAnterior));
+  return {from,to};
+}
+const DEF_PERIODO = defaultPeriodo();
+const state = { from:DEF_PERIODO.from, to:DEF_PERIODO.to, u:-1, us:null, crit:null, sit:null, disc:null, mode:'pres', sel:0, pendSit:-1 };
 const charts = {};
 
 /* ------------------------------------------------------------ formatação */
@@ -8906,7 +8921,8 @@ function refreshAllControls(){
 }
 function applyPayload(p){
   DATA=p;MO=DATA.meses;D=DATA.dim;BK=DATA.buckets;NMI=DATA.miMax;MI_PARCIAL=DATA.parcial??-1;RAMPA=new Set(DATA.rampa||[]);normalizeUsinas();
-  state.from=0;state.to=NMI;state.u=-1;state.us=null;state.crit=null;state.sit=null;state.disc=null;state.sel=null;state.pendSit=-1;
+  const defPer=defaultPeriodo(); // Janeiro/2026 até o mês anterior ao atual — ver comentário em defaultPeriodo()
+  state.from=defPer.from;state.to=defPer.to;state.u=-1;state.us=null;state.crit=null;state.sit=null;state.disc=null;state.sel=null;state.pendSit=-1;
   for(const k of Object.keys(charts)){try{charts[k].destroy();}catch(_){}delete charts[k];}
   refreshAllControls();render();
   try{ document.dispatchEvent(new CustomEvent('ambar-data-updated')); }catch(_){}
