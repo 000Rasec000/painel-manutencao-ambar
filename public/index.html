@@ -7007,9 +7007,9 @@ function kpis(T,co,coP,coE,pl,IMP,TP,den){
              `${int(TFin.atraso61)} OS com atraso de 61 dias ou mais`],
       extraCls:['foot-extra','foot-extra-dark','foot-extra-red'],
       drill:[
-        ()=>({titulo:'Aderência · atraso de 8 a 30 dias', lista:osdList(d=>d[5]===0&&d[18]!=null&&d[18]>7&&d[18]<=30)}),
-        ()=>({titulo:'Aderência · atraso de 31 a 60 dias', lista:osdList(d=>d[5]===0&&d[18]!=null&&d[18]>30&&d[18]<=60)}),
-        ()=>({titulo:'Aderência · atraso de 61 dias ou mais', lista:osdList(d=>d[5]===0&&d[18]!=null&&d[18]>60)})
+        ()=>({titulo:'Aderência · atraso de 8 a 30 dias', lista:osdList(d=>d[5]===0&&d[20]===1&&d[18]!=null&&d[18]>7&&d[18]<=30)}),
+        ()=>({titulo:'Aderência · atraso de 31 a 60 dias', lista:osdList(d=>d[5]===0&&d[20]===1&&d[18]!=null&&d[18]>30&&d[18]<=60)}),
+        ()=>({titulo:'Aderência · atraso de 61 dias ou mais', lista:osdList(d=>d[5]===0&&d[20]===1&&d[18]!=null&&d[18]>60)})
       ] },
     { c: pend.length>300?'bad':pend.length>120?'warn':'ok', lbl:'Backlog pendente', val:hrs(hhPend),
       foot:`${int(pend.length)} OS pendentes${soBacklog()?'':' · divididos em:'}`,
@@ -8697,6 +8697,12 @@ function buildPayloadFromWorkbook(wb,arquivo){
     const nomeDisc=deslocada?V(r,'Serviço | Código'):null;
     let cls=classeServico(nomeServ);if(cls===5)inc('servico_nao_classificado');else if(cls===4)inc('servico_em_apoio_e_outros');
     const org=V(r,'Solicitação de Serviço | Código')!=null?1:(V(r,'Plano de Manutenção | Código')!=null?0:2);
+    // Tem plano de manutenção = colunas G, H e I (Plano de Manutenção | Código, Priorização do
+    // Plano, Frequencia) todas preenchidas — usado para restringir a Aderência à Programação e
+    // os cálculos associados a ela (pedido do usuário em 04/11/2026). Diferente de "org" acima,
+    // que só olha a coluna G (Código) para classificar a origem da OS.
+    const preench=v=>v!=null&&v!=='';
+    const hasPlano=preench(V(r,'Plano de Manutenção | Código'))&&preench(V(r,'Plano de Manutenção | Priorização do Plano'))&&preench(V(r,'Plano de Manutenção | Frequencia'));
     const cr=texto(V(r,'Equipamento | Criticidade')).toUpperCase();const crit=['A','B','C'].includes(cr)?['A','B','C'].indexOf(cr):3;if(crit===3)inc('criticidade_ausente');
     const st=texto(V(r,'Ordem de Serviço | Situação'));const sit=/Finaliz/i.test(st)?0:(/Cancel/i.test(st)?2:1);
     const pr=texto(V(r,'Ordem de Serviço | Prioridade'));let prio=4;if(/^[1-4]-/.test(pr))prio=+pr[0]-1;else if(pr){inc('prioridade_invalida');if(pareceNomePessoa(pr))inc('prioridade_com_nome_de_pessoa');}
@@ -8723,8 +8729,13 @@ function buildPayloadFromWorkbook(wb,arquivo){
     const disc=dim(dimD,nomeDisc!=null?texto(nomeDisc):resolve(r,'Tipo de Manutenção | Código','Tipo de Manutenção | Nome',mpDisc,'Não informada'));
     const ck=JSON.stringify([mi,u,cls,org,crit,sit,disc]),cv=addMap(cube,ck,19);cv[0]++;cv[1]+=reativa;cv[2]+=vr===0?1:0;cv[3]+=vr>0?1:0;cv[4]+=vr<0?1:0;
     if(hR!=null){cv[5]+=hR;cv[8]++;}if(hE!=null)cv[6]+=hE;if(hP!=null)cv[7]+=hP;if(custo>0){cv[9]+=custo;cv[10]++;}cv[11]+=prio===0?1:0;if(dur!=null){cv[17]+=dur;cv[18]++;}
-    if(vr!=null){if(Math.abs(vr)<=7){cv[12]++;}else if(vr>0){if(vr<=30)cv[13]++;else if(vr<=60)cv[14]++;else cv[15]++;}else{cv[16]++;}}
+    // Aderência à Programação só considera OS com plano de manutenção (colunas G, H e I
+    // preenchidas) e finalizadas — pendentes/canceladas e OS sem plano (Solicitação de Serviço
+    // ou Avulsa) ficam de fora do numerador e do denominador do indicador (pedido do usuário em
+    // 04/11/2026). As demais contagens de cv (n, reativa, horas, custo etc.) não são afetadas.
+    if(vr!=null&&sit===0&&hasPlano){if(Math.abs(vr)<=7){cv[12]++;}else if(vr>0){if(vr<=30)cv[13]++;else if(vr<=60)cv[14]++;else cv[15]++;}else{cv[16]++;}}
     // cv[12]=no prazo (variação até 7 dias) · cv[13]=atraso 8-30d · cv[14]=atraso 31-60d · cv[15]=atraso 61d+ · cv[16]=antecipada 8d+
+    // (cv[12..16] já restritos a: finalizada + com plano de manutenção)
     if(sit===0&&dur!=null){const hk=JSON.stringify([mi,u,cls]),hv=addMap(hist,hk,9);let bi=0;for(let i=0;i<BK.length;i++)if(dur>=BK[i])bi=i;hv[bi]++;}
     const sysn=dim(dimS,resolve(r,'Centro de Custo | Código','Centro de Custo | Nome',mpSys,'Não informado'));
     const dk=JSON.stringify([mi,u,disc,sit]),dv=addMap(cdisc,dk,2);dv[0]++;dv[1]+=[0,6].includes(cls)?1:0;
@@ -8734,7 +8745,7 @@ function buildPayloadFromWorkbook(wb,arquivo){
     const efk=JSON.stringify([u,tag,mi,sit]),ef=addMap(eqFato,efk,4);ef[0]+=[0,6].includes(cls)?1:0;ef[1]++;if(hR!=null)ef[2]+=hR;if(dur!=null)ef[3]+=dur;
     if([0,6].includes(cls)){if(!eqCorr.has(eqk))eqCorr.set(eqk,[]);eqCorr.get(eqk).push(dd);}
     let ps=texto(V(r,'Ordem de Serviço | Situação Planejamento')||'Não informada').replace(/^\d-/,'').trim()||'Não informada';
-    const det=osd.length;osd.push([cod,u,mi,cls,crit,sit,tag,texto(V(r,'Equipamento | Nome'),100),texto(nomeServ,140),texto(V(r,'Ordem de Serviço | Descrição da Atividade'),500),dd,ps,prio,hR==null?null:+hR.toFixed(2),hP==null?null:+hP.toFixed(2),sysn,reativa,org,vr,disc]);
+    const det=osd.length;osd.push([cod,u,mi,cls,crit,sit,tag,texto(V(r,'Equipamento | Nome'),100),texto(nomeServ,140),texto(V(r,'Ordem de Serviço | Descrição da Atividade'),500),dd,ps,prio,hR==null?null:+hR.toFixed(2),hP==null?null:+hP.toFixed(2),sysn,reativa,org,vr,disc,hasPlano?1:0]);
     if(sit===1)pend.push([u,cls,crit,dim(dimPS,ps),hojeDia-(ddBase??dd),+((hP||0).toFixed(2)),mi,prio,det,disc]);
     osPorCod.set(cod,[mi,u,cls,sit]);
   }
