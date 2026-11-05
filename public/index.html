@@ -8640,7 +8640,7 @@ function classeServico(nome){
   return 4;
 }
 
-function buildPayloadFromWorkbook(wb,arquivo){
+function buildPayloadFromWorkbook(wb,arquivo,atualizadoEmReal){
   const ws=wb.Sheets[wb.SheetNames[0]];if(!ws)throw new Error('A planilha não possui abas legíveis.');
   const range=XLSX.utils.decode_range(ws['!ref']||'A1:A1');
   const row0=ws[0]||[],row1=ws[1]||[];let cur=null;const grupos=[],cols=[],seen={};
@@ -8757,7 +8757,12 @@ function buildPayloadFromWorkbook(wb,arquivo){
   const extracao=diaMaxQ||hojeQ,ult=extracao.y*12+extracao.m-1,diasMes=new Date(Date.UTC(extracao.y,extracao.m,0)).getUTCDate();
   const arrMap=(m,fn)=>[...m].map(([k,v])=>fn(JSON.parse(k),v)).sort((a,b)=>{for(let i=0;i<Math.min(a.length,b.length);i++){if(typeof a[i]==='number'&&typeof b[i]==='number'&&a[i]!==b[i])return a[i]-b[i];}return 0;});
   const eqf=[];for(const [k,v] of eqFato){const [u,tag,mi,si]=JSON.parse(k),ei=eqidx.get(JSON.stringify([u,tag]));if(ei!=null)eqf.push([ei,mi-B,si,v[0],v[1],+v[2].toFixed(2),+v[3].toFixed(2)]);}eqf.sort((a,b)=>a[0]-b[0]||a[1]-b[1]||a[2]-b[2]);
-  return {gerado:isoYmd(hojeQ),atualizadoEm:new Date().toISOString(),arquivo,extracao:isoYmd(extracao),parcial:extracao.d<diasMes?ult-B:-1,
+  // "Última atualização" deve refletir o momento da última CARGA de dados (quando uma nova
+  // listagem foi importada no D1), não o instante em que cada usuário abre o painel no
+  // navegador — por isso usa atualizadoEmReal (vindo do /api/os) quando disponível, e só cai
+  // para "agora" no upload manual de planilha local, onde "agora" é de fato o momento da carga
+  // (pedido do usuário em 05/11/2026).
+  return {gerado:isoYmd(hojeQ),atualizadoEm:atualizadoEmReal||new Date().toISOString(),arquivo,extracao:isoYmd(extracao),parcial:extracao.d<diasMes?ult-B:-1,
     rampa:[...vol].filter(([,n])=>n<100).map(([mi])=>mi-B).sort((a,b)=>a-b),base:B,miMax:miMax-B,meses:['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'],buckets:[0,.5,1,2,4,8,24,72,168],
     dim:{usinas:inv(dimU),classes:['Manutenção Corretiva Planejada','Preventiva','Preditiva','Melhoria','Apoio e outros','Não classificado','Manutenção Corretiva Emergencial'],origens:['Plano de Manutenção','Solicitação de Serviço','Avulsa'],crits:['A','B','C','Não informada'],sits:['Finalizada','Pendente','Cancelada'],prios:['Emergência','Urgente','Normal','Baixa','Não informada'],discs:inv(dimD),sistemas:inv(dimS),planSits:inv(dimPS),replMotivos:inv(dimR)},
     cube:arrMap(cube,(k,v)=>[k[0]-B,k[1],k[2],k[3],k[4],k[5],...v.map(x=>typeof x==='number'?+x.toFixed(2):x),k[6]]),hist:arrMap(hist,(k,v)=>[k[0]-B,...k.slice(1),...v]),
@@ -8919,7 +8924,7 @@ async function buildPayloadFromApi(){
   const ws = buildFakeDenseSheetFromApiRows(items);
   const wb = {SheetNames:['OS'], Sheets:{OS: ws}};
   const nomeArq = 'api:/api/os' + (updatedAt ? (' ('+updatedAt+')') : '');
-  return buildPayloadFromWorkbook(wb, nomeArq);
+  return buildPayloadFromWorkbook(wb, nomeArq, updatedAt);
 }
 
 
