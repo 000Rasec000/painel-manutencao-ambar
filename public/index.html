@@ -5919,7 +5919,7 @@ body[data-mode="pres"] .intelligence-grid{grid-template-columns:1fr!important}
 <div class="loading" id="loading"><div class="loading-box"><h3 id="loadingTitle">Processando a base</h3><p id="loadingText">Lendo a planilha e recalculando os indicadores…</p><div class="progress"><i></i></div></div></div>
 <div class="modal" id="detailModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div class="modal-card">
-    <div class="modal-head"><div><h3 id="modalTitle">Detalhes das ordens de serviço</h3><p id="modalSub"></p></div><button class="btn" id="modalBack" style="display:none;margin-right:8px" type="button">← Voltar</button><button class="modal-close" id="modalClose" aria-label="Fechar">×</button></div>
+    <div class="modal-head"><div><h3 id="modalTitle">Detalhes das ordens de serviço</h3><p id="modalSub"></p></div><button class="btn" id="modalExport" style="display:none;margin-right:8px" type="button">Exportar</button><button class="btn" id="modalBack" style="display:none;margin-right:8px" type="button">← Voltar</button><button class="modal-close" id="modalClose" aria-label="Fechar">×</button></div>
     <div class="modal-body" id="modalBody"></div>
   </div>
 </div>
@@ -8267,12 +8267,15 @@ function detalheCampos(d){return [
   ['Tag',d[6]],['Equipamento',d[7]],['Sistema',D.sistemas[d[15]]||'—'],['Tempo realizado',d[13]==null?'—':hrs(d[13])],
   ['Tempo previsto',d[14]==null?'—':hrs(d[14])],['Serviço',d[8]],['Descrição',d[9]]
 ];}
-function openModal(titulo,sub,html,voltar){
+function openModal(titulo,sub,html,voltar,exportar){
   document.getElementById('modalTitle').textContent=titulo;document.getElementById('modalSub').textContent=sub||'';
   document.getElementById('modalBody').innerHTML=html;document.getElementById('detailModal').classList.add('on');
   const backBtn=document.getElementById('modalBack');
   if(voltar){ backBtn.style.display=''; backBtn.onclick=voltar; }
   else{ backBtn.style.display='none'; backBtn.onclick=null; }
+  const expBtn=document.getElementById('modalExport');
+  if(exportar){ expBtn.style.display=''; expBtn.onclick=exportar; }
+  else{ expBtn.style.display='none'; expBtn.onclick=null; }
 }
 function showOSDetail(d,voltar){
   const f=detalheCampos(d);
@@ -8283,8 +8286,26 @@ function showOSList(titulo,sub,lista){
   const rs=[...lista].sort((a,b)=>(b[10]??0)-(a[10]??0));
   const html=rs.length?`<table class="modal-list"><thead><tr><th>Usina</th><th>OS</th><th>Data</th><th>Tag / equipamento</th><th>Classe</th><th>Situação</th><th>Serviço</th></tr></thead><tbody>${rs.slice(0,1000).map(d=>
     `<tr class="clickable" data-code="${esc(d[0])}"><td>${esc(D.usinas[d[1]])}</td><td><b>${esc(osNum(d))}</b></td><td>${dataDia(d[10])}</td><td>${esc(d[6])}<br><span style="color:var(--muted)">${esc(d[7])}</span></td><td>${esc(D.classes[d[3]])}</td><td>${esc(D.sits[d[5]])}</td><td>${esc(d[8])}</td></tr>`).join('')}</tbody></table>${rs.length>1000?`<div class="note">Exibindo as primeiras 1.000 de ${int(rs.length)} OS.</div>`:''}`:'<div class="note">Nenhuma OS encontrada neste recorte.</div>';
-  openModal(titulo,sub,html,()=>document.getElementById('detailModal').classList.remove('on'));
+  openModal(titulo,sub,html,()=>document.getElementById('detailModal').classList.remove('on'),rs.length?()=>exportarListaOS(titulo,sub,rs):null);
   document.querySelectorAll('#modalBody tr[data-code]').forEach((tr,i)=>tr.onclick=()=>showOSDetail(rs[i],()=>showOSList(titulo,sub,lista)));
+}
+/* Exporta a lista inteira (não só as 1.000 primeiras exibidas na tela) para um .xlsx, com todas
+   as colunas que aparecem no detalhe de cada OS (não só o resumo da tabela) — pedido do usuário
+   em 24/11/2026, para poder tratar os dados de qualquer lista do painel fora dele. */
+function exportarListaOS(titulo,sub,lista){
+  try{
+    const linhas=lista.map(d=>{
+      const obj={};
+      detalheCampos(d).forEach(([l,v])=>{obj[l]=v==null?'':v;});
+      return obj;
+    });
+    const ws=XLSX.utils.json_to_sheet(linhas);
+    ws['!cols']=[{wch:16},{wch:10},{wch:12},{wch:10},{wch:26},{wch:10},{wch:10},{wch:26},{wch:14},{wch:30},{wch:24},{wch:14},{wch:14},{wch:16},{wch:60}];
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'OS');
+    const base=String(titulo||'Lista de OS').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,80)||'lista_os';
+    XLSX.writeFile(wb, base+'.xlsx');
+  }catch(e){ alert('Não foi possível gerar o Excel: '+(e&&e.message||e)); }
 }
 document.getElementById('modalClose').onclick=()=>document.getElementById('detailModal').classList.remove('on');
 document.getElementById('detailModal').onclick=e=>{if(e.target.id==='detailModal')e.currentTarget.classList.remove('on');};
