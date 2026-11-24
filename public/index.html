@@ -6838,14 +6838,14 @@ function mtbfPorUsina(){
   const grupos=new Map(), out=new Map();
   if(!histoAplicavel()) return out;
   for(const d of (DATA.osd||[])){
-    if(d[2]<state.from||d[2]>state.to||d[5]!==0||!CORR.includes(d[3])) continue;
+    if(d[21]<state.from||d[21]>state.to||d[5]!==0||!CORR.includes(d[3])) continue;
     if(!incluiUsina(d[1])) continue;
     if(!incluiCrit(d[4])) continue;
     if(!incluiDisc(d[19])) continue;
-    if(d[10]==null) continue;
+    if(d[22]==null) continue;
     const k=d[1]+'\u0001'+d[6];
     if(!grupos.has(k)) grupos.set(k,{u:d[1],dias:[]});
-    grupos.get(k).dias.push(d[10]);
+    grupos.get(k).dias.push(d[22]);
   }
   for(const g of grupos.values()){
     g.dias.sort((a,b)=>a-b);
@@ -7198,8 +7198,8 @@ function mtbfMensal(){
   if(!histoAplicavel()) return out;
   const grupos=new Map();
   for(const d of (DATA.osd||[])){
-    if(d[2]<state.from||d[2]>state.to||d[5]!==0||!CORR.includes(d[3])||!incluiUsina(d[1])||(!incluiCrit(d[4]))||(!incluiDisc(d[19]))||d[10]==null) continue;
-    const k=d[1]+'\u0001'+d[6]; if(!grupos.has(k)) grupos.set(k,[]); grupos.get(k).push({mi:d[2],dia:d[10]});
+    if(d[21]<state.from||d[21]>state.to||d[5]!==0||!CORR.includes(d[3])||!incluiUsina(d[1])||(!incluiCrit(d[4]))||(!incluiDisc(d[19]))||d[22]==null) continue;
+    const k=d[1]+'\u0001'+d[6]; if(!grupos.has(k)) grupos.set(k,[]); grupos.get(k).push({mi:d[21],dia:d[22]});
   }
   for(const ds of grupos.values()){
     ds.sort((a,b)=>a.dia-b.dia);
@@ -7281,11 +7281,11 @@ function mtbfPorUsinaMes(u,mi){
   const grupos=new Map();
   for(const d of (DATA.osd||[])){
     if(d[1]!==u||d[5]!==0||!CORR.includes(d[3])) continue;
-    if(d[2]<state.from||d[2]>state.to) continue;
+    if(d[21]<state.from||d[21]>state.to) continue;
     if(!incluiCrit(d[4])) continue;
     if(!incluiDisc(d[19])) continue;
-    if(d[10]==null) continue;
-    const k=d[6]; if(!grupos.has(k)) grupos.set(k,[]); grupos.get(k).push({mi:d[2],dia:d[10]});
+    if(d[22]==null) continue;
+    const k=d[6]; if(!grupos.has(k)) grupos.set(k,[]); grupos.get(k).push({mi:d[21],dia:d[22]});
   }
   let sum=0,n=0;
   for(const ds of grupos.values()){
@@ -7435,8 +7435,8 @@ function healthFor(from,to,units){
   if(histoAplicavel()){
     const grupos=new Map();
     for(const d of (DATA.osd||[])){
-      if(d[2]<from||d[2]>to||d[5]!==0||!CORR.includes(d[3])||!us.has(d[1])||(!incluiCrit(d[4]))||(!incluiDisc(d[19]))||d[10]==null)continue;
-      const k=d[1]+'\u0001'+d[6];if(!grupos.has(k))grupos.set(k,[]);grupos.get(k).push(d[10]);
+      if(d[21]<from||d[21]>to||d[5]!==0||!CORR.includes(d[3])||!us.has(d[1])||(!incluiCrit(d[4]))||(!incluiDisc(d[19]))||d[22]==null)continue;
+      const k=d[1]+'\u0001'+d[6];if(!grupos.has(k))grupos.set(k,[]);grupos.get(k).push(d[22]);
     }
     for(const ds of grupos.values()){
       ds.sort((a,b)=>a-b);for(let i=1;i<ds.length;i++){mtbfSum+=ds[i]-ds[i-1];mtbfN++;}
@@ -8710,6 +8710,12 @@ function buildPayloadFromWorkbook(wb,arquivo,atualizadoEmReal){
     const motss=semAcento(V(r,'Solicitação de Serviço | Motivo'));const marca=prio===0||motss.includes('EMERGENCIAL');
     const lanc=ymd(C(r,'Ordem de Serviço | Lancamento')),inia=ymd(C(r,'Ordem de Serviço | Inicio Atividade'));
     let reativa=0;if(lanc&&inia)reativa=diaYmd(lanc)>=diaYmd(inia)?1:0;else inc('sem_par_de_datas_para_regra_reativa');if(reativa)inc('os_com_execucao_reativa');
+    // MTBF: usa a data de ABERTURA do problema (Ordem de Serviço | Lancamento), não a data de
+    // execução/fechamento ("Data do Serviço") — senão uma corretiva aberta há meses (aguardando
+    // peça, por exemplo) e só executada/fechada agora entra no cálculo como se a falha tivesse
+    // acabado de acontecer, distorcendo o intervalo entre reincidências (pedido do usuário em
+    // 24/11/2026). Cai para a data de execução só se faltar a de lançamento (nunca deveria faltar).
+    const ddAb=lanc?diaYmd(lanc):dd, miAb=lanc?(lanc.y*12+lanc.m-1):mi;
     if(cls===0&&(marca||reativa)){cls=6;inc('corretiva_emergencial');if(marca)inc('corretiva_emergencial_por_marca_do_sistema');if(reativa&&!marca)inc('corretiva_emergencial_so_pela_regra_de_data');}
     else if(cls===0)inc('corretiva_planejada');else if(reativa)inc('nao_corretiva_com_execucao_reativa');
     const iniDT=dataHora(C(r,'Ordem de Serviço | Inicio Atividade')),fimDT=dataHora(C(r,'Ordem de Serviço | Término Atividade'));
@@ -8744,9 +8750,9 @@ function buildPayloadFromWorkbook(wb,arquivo,atualizadoEmReal){
     const tag=texto(V(r,'Equipamento | Tag')||V(r,'Equipamento | Código')||'?'),eqk=JSON.stringify([u,tag]);
     if(!eqInfo.has(eqk))eqInfo.set(eqk,[u,crit,sysn,tag,texto(V(r,'Equipamento | Nome'),60)]);
     const efk=JSON.stringify([u,tag,mi,sit]),ef=addMap(eqFato,efk,4);ef[0]+=[0,6].includes(cls)?1:0;ef[1]++;if(hR!=null)ef[2]+=hR;if(dur!=null)ef[3]+=dur;
-    if([0,6].includes(cls)){if(!eqCorr.has(eqk))eqCorr.set(eqk,[]);eqCorr.get(eqk).push(dd);}
+    if([0,6].includes(cls)){if(!eqCorr.has(eqk))eqCorr.set(eqk,[]);eqCorr.get(eqk).push(ddAb);}
     let ps=texto(V(r,'Ordem de Serviço | Situação Planejamento')||'Não informada').replace(/^\d-/,'').trim()||'Não informada';
-    const det=osd.length;osd.push([cod,u,mi,cls,crit,sit,tag,texto(V(r,'Equipamento | Nome'),100),texto(nomeServ,140),texto(V(r,'Ordem de Serviço | Descrição da Atividade'),500),dd,ps,prio,hR==null?null:+hR.toFixed(2),hP==null?null:+hP.toFixed(2),sysn,reativa,org,vr,disc,hasPlano?1:0]);
+    const det=osd.length;osd.push([cod,u,mi,cls,crit,sit,tag,texto(V(r,'Equipamento | Nome'),100),texto(nomeServ,140),texto(V(r,'Ordem de Serviço | Descrição da Atividade'),500),dd,ps,prio,hR==null?null:+hR.toFixed(2),hP==null?null:+hP.toFixed(2),sysn,reativa,org,vr,disc,hasPlano?1:0,miAb,ddAb]);
     if(sit===1)pend.push([u,cls,crit,dim(dimPS,ps),hojeDia-(ddBase??dd),+((hP||0).toFixed(2)),mi,prio,det,disc]);
     osPorCod.set(cod,[mi,u,cls,sit]);
   }
@@ -8768,7 +8774,7 @@ function buildPayloadFromWorkbook(wb,arquivo,atualizadoEmReal){
     dim:{usinas:inv(dimU),classes:['Manutenção Corretiva Planejada','Preventiva','Preditiva','Melhoria','Apoio e outros','Não classificado','Manutenção Corretiva Emergencial'],origens:['Plano de Manutenção','Solicitação de Serviço','Avulsa'],crits:['A','B','C','Não informada'],sits:['Finalizada','Pendente','Cancelada'],prios:['Emergência','Urgente','Normal','Baixa','Não informada'],discs:inv(dimD),sistemas:inv(dimS),planSits:inv(dimPS),replMotivos:inv(dimR)},
     cube:arrMap(cube,(k,v)=>[k[0]-B,k[1],k[2],k[3],k[4],k[5],...v.map(x=>typeof x==='number'?+x.toFixed(2):x),k[6]]),hist:arrMap(hist,(k,v)=>[k[0]-B,...k.slice(1),...v]),
     disc:arrMap(cdisc,(k,v)=>[k[0]-B,...k.slice(1),...v]),sys:arrMap(csys,(k,v)=>[k[0]-B,...k.slice(1),...v]),repl:arrMap(crepl,(k,v)=>[k[0]-B,...k.slice(1),v]),
-    eq:bad.map(k=>eqInfo.get(k)),eqf,eqd:bad.map(k=>[eqidx.get(k),[...eqCorr.get(k)].sort((a,b)=>a-b)]),osd:osd.map(d=>[d[0],d[1],d[2]-B,...d.slice(3)]),
+    eq:bad.map(k=>eqInfo.get(k)),eqf,eqd:bad.map(k=>[eqidx.get(k),[...eqCorr.get(k)].sort((a,b)=>a-b)]),osd:osd.map(d=>{const e=d.slice();e[2]-=B;e[21]-=B;return e;}),
     pend:pend.map(p=>[p[0],p[1],p[2],p[3],p[4],p[5],p[6]-B,p[7],p[8],p[9]]),dq};
 }
 
